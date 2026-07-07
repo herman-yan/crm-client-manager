@@ -255,7 +255,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 .dd-menu .dd-item:hover{background:var(--pri-bg)}
 .dd-menu .dd-item.active{color:var(--pri);font-weight:600}
 
-</style></head><body>
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head><body>
 
 <!-- Mobile Header -->
 <header class="header">
@@ -499,6 +501,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 <div class="toast" id="toast"></div>
 
 <script>
+
+const SB_URL = 'https://bbiddukkkxthtairizlk.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiaWRkdWtra3h0aHRhaXJpemxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNzM4NjIsImV4cCI6MjA5ODk0OTg2Mn0.VBt4kQI-YXJKSw5TRWjH8uNXCljYxO6IW8ACi89wgXo';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+let _syncBusy = false;
 // ===== DATA =====
 const INITIAL_DATA = {
   "projects": [
@@ -1468,8 +1475,190 @@ let S = {
 };
 let currentPanelId = null;
 
-// ===== INIT =====
-function init(){
+// ===== INIT (Supabase) =====
+async function init(){
+  try {
+    // Fetch all data from Supabase
+    let [{data: projects},{data: logs},{data: partners},{data: clients},{data: resources},{data: changes}] = 
+      await Promise.all([
+        sb.from('projects').select('*'),
+        sb.from('logs').select('*').order('date_sort',{ascending:false}),
+        sb.from('partners').select('*'),
+        sb.from('clients').select('*'),
+        sb.from('resources').select('*'),
+        sb.from('changes').select('*').order('created_at',{ascending:false}).limit(100)
+      ]);
+
+    // If no projects in DB, seed from INITIAL_DATA
+    if(!projects || projects.length===0){
+      await seedToSupabase();
+      // Refetch
+      [{data: projects},{data: logs},{data: partners},{data: clients},{data: resources},{data: changes}] = 
+        await Promise.all([
+          sb.from('projects').select('*'),
+          sb.from('logs').select('*').order('date_sort',{ascending:false}),
+          sb.from('partners').select('*'),
+          sb.from('clients').select('*'),
+          sb.from('resources').select('*'),
+          sb.from('changes').select('*').order('created_at',{ascending:false}).limit(100)
+        ]);
+    }
+
+    // Merge logs into projects (logs table -> project.logs array)
+    projects.forEach(p => {
+      p.logs = (logs||[]).filter(l => l.project_id === p.id).map(l => ({
+        id: 'log_'+l.id,
+        date: l.date||'',
+        note: l.note||'',
+        dateSort: l.date_sort||'',
+        person: l.person||''
+      }));
+    });
+
+    // Build clients if empty
+    if(!clients || clients.length===0){
+      let known = [
+        {name:'蔚来汽车',industry:'新能源汽车',proj_ids:'[2]'},
+        {name:'中国铁塔',industry:'通信基础设施',proj_ids:'[6]'},
+        {name:'首钢基金',industry:'金融投资',proj_ids:'[7]'},
+        {name:'天津滨环再生资源',industry:'再生资源',proj_ids:'[8]'},
+        {name:'榆垡镇政府',industry:'政府',proj_ids:'[5]'},
+        {name:'宁德时代（间接）',industry:'新能源电池',proj_ids:'[1]'},
+        {name:'四川远海',industry:'咨询服务/出海',proj_ids:'[3]'},
+        {name:'中电建',industry:'电力能源',proj_ids:'[4]'},
+        {name:'永辉超市',industry:'零售',proj_ids:'[9]'},
+        {name:'京能集团',industry:'能源',proj_ids:'[11]'},
+        {name:'首钢环境',industry:'环保',proj_ids:'[7]'},
+        {name:'华电',industry:'电力',proj_ids:'[9]'},
+      ];
+      for(let k of known){
+        await sb.from('clients').insert({
+          name:k.name, industry:k.industry, status:'活跃',
+          contact:'', phone:'', address:'', note:'', proj_ids:k.proj_ids
+        });
+      }
+      let {data: c2} = await sb.from('clients').select('*');
+      clients = c2;
+    }
+
+    // Build resources if empty
+    if(!resources || resources.length===0){
+      await seedResources();
+      let {data: r2} = await sb.from('resources').select('*');
+      resources = r2;
+    }
+
+    // Populate state
+    S.projects = projects || [];
+    S.partners = (partners||[]).map(p=>({...p, id:'p'+p.id}));
+    S.clients = (clients||[]).map(c=>({...c, id:'c'+c.id, projIds: parseProjIds(c.proj_ids)}));
+    S.resources = (resources||[]).map(r=>{
+      let cs=[]; try{cs=JSON.parse(r.contacts||'[]');}catch(e){}
+      return {...r, contacts:cs, company: r.company_name||r.company||'', industry: r.category||r.industry||'', business: r.description||r.business||''};
+    });
+
+    S.changes = (changes||[]).map(c=>({type:c.action,title:c.target_name,desc:c.detail,time:c.created_at}));
+
+    // Load settings from localStorage (personal config, not shared)
+    try {
+      let savedSettings = localStorage.getItem('crm_v2_settings');
+      if(savedSettings){
+        let ss = JSON.parse(savedSettings);
+        if(ss.pushKey) S.pushKey = ss.pushKey;
+        if(ss.defaultPerson) S.defaultPerson = ss.defaultPerson;
+        if(ss.pushEnabled !== undefined) S.pushEnabled = ss.pushEnabled;
+      }
+    } catch(e){}
+
+    // Fix data
+    S.projects.forEach(p=>{
+      if(!p.logs) p.logs=[];
+      p.logs.sort((a,b)=>b.dateSort.localeCompare(a.dateSort));
+    });
+
+    renderDashboard();
+    updateNotifBadge();
+    updatePersonDatalist();
+    if('Notification' in window && Notification.permission==='default') setTimeout(()=>Notification.requestPermission(),3000);
+    setInterval(checkReminders, 60000);
+  } catch(e) {
+    console.error('Init error:',e);
+    showToast('⚠️ 连接服务器失败，请刷新重试');
+  }
+}
+
+function parseProjIds(str){
+  if(!str) return [];
+  try { return JSON.parse(str); } catch(e) { return []; }
+}
+
+async function seedToSupabase(){
+  let projects = INITIAL_DATA.projects;
+  for(let i=0;i<projects.length;i++){
+    let p = projects[i];
+    let {data:proj} = await sb.from('projects').insert({
+      id: i+1,
+      name: p.name,
+      priority: p.priority||'中',
+      completion: p.completion||'0',
+      completion_num: p.completionNum||0,
+      status: p.status||'进行中'
+    }).select('id').single();
+
+    if(p.logs){
+      for(let log of p.logs){
+        await sb.from('logs').insert({
+          project_id: i+1,
+          date: log.date||'',
+          note: log.note||'',
+          date_sort: log.dateSort||'',
+          person: log.person||''
+        });
+      }
+    }
+  }
+  // Partners
+  for(let i=0;i<INITIAL_DATA.partners.length;i++){
+    let p = INITIAL_DATA.partners[i];
+    await sb.from('partners').insert({
+      industry: p.industry||'', company: p.company, direction: p.direction||'',
+      status: p.status||'', issue: p.issue||''
+    });
+  }
+  // Changes
+  await sb.from('changes').insert({
+    action:'create', target_type:'system', target_name:'系统初始化',
+    detail:'导入'+projects.length+'个项目、'+INITIAL_DATA.partners.length+'个行业伙伴'
+  });
+}
+
+async function seedResources(){
+  let res = INITIAL_DATA.resources || [];
+  for(let r of res){
+    await sb.from('resources').insert({
+      category: r.industry||'',
+      company_name: r.company||r.name||'',
+      description: r.business||'',
+      contacts: JSON.stringify(r.contacts||[]),
+      website: r.website||''
+    });
+  }
+}
+
+// Add INITIAL_DATA resources
+INITIAL_DATA.resources = [
+  {company:'蔚来汽车',industry:'新能源汽车',business:'智能电动汽车研发制造，充换电服务，NIO Power能源体系。核心产品：ES8/ES7/ES6/ET7/ET5等。',website:'https://www.nio.cn',contacts:[{name:'焦经理',role:'全国充换电设施',mobile:'',wechat:'',email:'',note:''}]},
+  {company:'宇树科技',industry:'机器人',business:'四足机器人（Go2/B2）、人形机器人（G1/H1）、消费级&工业级机器人，具身智能与AI运动控制。',website:'https://www.unitree.com',contacts:[{name:'市场部',role:'市场总监',mobile:'',wechat:'',email:'info@unitree.com',note:'官网联系'}]},
+  {company:'优必选科技',industry:'机器人',business:'人形机器人Walker系列、教育机器人、商用服务机器人、智慧康养机器人。港股上市(9880.HK)。',website:'https://www.ubtrobot.com',contacts:[{name:'商务合作',role:'商务',mobile:'',wechat:'',email:'bd@ubtrobot.com',note:''}]},
+  {company:'中国铁塔',industry:'通信基础设施',business:'通信铁塔基站配套设施建设维护运营。能源业务：换电、备电、充电等。数据信息服务。',website:'https://www.china-tower.com',contacts:[{name:'换电业务',role:'能源业务部',mobile:'',wechat:'',email:'',note:'通过10096客服'}]},
+  {company:'首钢基金',industry:'金融投资',business:'产业投资基金及资产管理，聚焦智能制造、新能源、新材料、新一代信息技术赛道。',website:'https://www.sgfund.com',contacts:[{name:'投资部',role:'投资总监',mobile:'',wechat:'',email:'',note:''}]},
+  {company:'长城汽车',industry:'新能源汽车',business:'SUV、皮卡、轿车及新能源汽车。旗下品牌：哈弗、WEY、欧拉、坦克。A+H股上市。',website:'https://www.gwm.com.cn',contacts:[{name:'采购部',role:'采购经理',mobile:'',wechat:'',email:'',note:''}]},
+  {company:'埃斯顿自动化',industry:'工业自动化',business:'工业机器人、运动控制系统、交流伺服系统。覆盖焊接、搬运、喷涂、打磨等应用。A股002747。',website:'https://www.estun.com',contacts:[{name:'销售部',role:'销售经理',mobile:'',wechat:'',email:'',note:''}]},
+  {company:'新松机器人',industry:'机器人',business:'工业机器人、移动机器人(AGV/AMR)、特种机器人、智能物流仓储系统。隶属中科院。A股(300024)。',website:'https://www.siasun.com',contacts:[{name:'市场部',role:'市场经理',mobile:'',wechat:'',email:'',note:''}]},
+];
+
+// ===== INIT LEGACY (kept for reference) =====
+function init_legacy(){
   let saved = localStorage.getItem('crm_v2');
   if(saved){
     try{ let p=JSON.parse(saved); S=p; }
@@ -1563,7 +1752,7 @@ function fixState(){
   saveState();
 }
 
-function saveState(){ localStorage.setItem('crm_v2', JSON.stringify(S)); }
+function saveState(){} // Supabase handles persistence
 
 function parseDate(d){
   d = String(d).replace(/[日进展展]/g,'').replace(/col\d+/,'').trim();
@@ -1595,6 +1784,34 @@ function getNavLabel(p){ return {dashboard:'工作台',projects:'项目',clients
 
 // ===== DASHBOARD =====
 let chartTrend = null;
+
+// ===== REFRESH ALL FROM SUPABASE =====
+async function refreshAll(){
+  try {
+    let [{data:projects},{data:logs},{data:partners},{data:clients},{data:resources},{data:changes}] = 
+      await Promise.all([
+        sb.from('projects').select('*'),
+        sb.from('logs').select('*').order('date_sort',{ascending:false}),
+        sb.from('partners').select('*'),
+        sb.from('clients').select('*'),
+        sb.from('resources').select('*'),
+        sb.from('changes').select('*').order('created_at',{ascending:false}).limit(100)
+      ]);
+    projects.forEach(p=>{
+      p.logs=(logs||[]).filter(l=>l.project_id===p.id).map(l=>({
+        id:'log_'+l.id,date:l.date,note:l.note,dateSort:l.date_sort,person:l.person||''
+      }));
+      p.logs.sort((a,b)=>b.dateSort.localeCompare(a.dateSort));
+    });
+    S.projects=projects||[];
+    S.partners=(partners||[]).map(p=>({...p,id:'p'+p.id}));
+    S.clients=(clients||[]).map(c=>({...c,id:'c'+c.id,projIds:parseProjIds(c.proj_ids)}));
+    S.resources=(resources||[]).map(r=>{ let cs=[];try{cs=JSON.parse(r.contacts||'[]');}catch(e){} return {...r,contacts:cs}; });
+    S.changes=(changes||[]).map(c=>({type:c.action,title:c.target_name,desc:c.detail,time:c.created_at}));
+    // Preserve settings
+  }catch(e){console.error('refreshAll error:',e);}
+}
+
 function renderDashboard(){
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'});
 
@@ -1830,15 +2047,19 @@ function buildTimeline(logs){
   }).join('')+'</div>';
 }
 
-function quickAddLog(pid){
+async function quickAddLog(pid){
   let inp=document.getElementById('quickLog'); if(!inp||!inp.value.trim()) return;
   let p=S.projects.find(x=>x.id===pid); if(!p) return;
   let person=S.defaultPerson||'';
   let now=new Date(), ds=(now.getMonth()+1)+'.'+now.getDate(), dsort=now.toISOString().slice(0,10);
-  p.logs.unshift({id:'log_'+Date.now(),date:ds,dateSort:dsort,note:inp.value.trim(),person:person,timestamp:now.toISOString()});
-  addChange('log',`跟进记录 - ${p.name}`,inp.value.trim().slice(0,50));
-  inp.value=''; saveState(); openProjPanel(pid); showToast('已添加 ✓');
-  pushToWechat(`项目跟进: ${p.name}`, `${person||'有人'}添加了跟进记录`, inp.value.trim().slice(0,80));
+  let note=inp.value.trim();
+  try {
+    await sb.from('logs').insert({project_id:pid,date:ds,note:note,date_sort:dsort,person});
+    await addChangeDb('log','跟进记录 - '+p.name,note.slice(0,50));
+    await refreshAll();
+    inp.value=''; openProjPanel(pid); showToast('已添加 ✓');
+    pushToWechat('项目跟进: '+p.name,(person||'有人')+'添加了跟进记录',note.slice(0,80));
+  }catch(e){console.error(e);showToast('保存失败');}
 }
 
 // ===== CLIENTS =====
@@ -1996,9 +2217,9 @@ function openProjModal(id){
   document.getElementById('mProj').classList.add('active');
 }
 
-function saveProject(){
+async function saveProject(){
   let name=document.getElementById('fProjName').value.trim(); if(!name){ showToast('请输入项目名称'); return; }
-  let id=document.getElementById('fProjId').value;
+  let id=Number(document.getElementById('fProjId').value)||0;
   let priority=document.getElementById('fProjPri').value;
   let comp=parseFloat(document.getElementById('fProjComp').value)||0;
   let customer=document.getElementById('fProjClient').value.trim();
@@ -2007,20 +2228,24 @@ function saveProject(){
 
   let status; if(priority==='战败') status='已流失'; else if(comp>=.9) status='即将完成'; else if(comp>=.5) status='进行中'; else if(comp>0) status='初期接触'; else status='待启动';
 
-  if(id){
-    let p=S.projects.find(x=>x.id===parseInt(id)); if(!p) return;
-    Object.assign(p,{name,priority,completionNum:comp,completion:String(comp),status,customer,industry,amount});
-    addChange('update',`更新项目 - ${name}`, `状态:${status}, 完成度:${Math.round(comp*100)}%`);
-  }else{
-    let nid=Math.max(0,...S.projects.map(x=>x.id))+1;
-    S.projects.push({id:nid,name,priority,completion:String(comp),completionNum:comp,status,customer,industry,amount,createdAt:new Date().toISOString(),logs:[]});
-    addChange('create',`新增项目 - ${name}`, `优先级:${priority}`);
-    // Auto-add client
-    if(customer && !S.clients.find(x=>x.name===customer)){
-      S.clients.push({id:'c'+Date.now(),name:customer,industry,status:'活跃',contact:'',phone:'',address:'',note:'',projIds:[nid],createdAt:new Date().toISOString()});
-    }else if(customer){ let c=S.clients.find(x=>x.name===customer); if(c&&!c.projIds.includes(nid)) c.projIds.push(nid); }
-  }
-  saveState(); closeModal('mProj'); renderProjCards(); showToast(id?'已更新 ✓':'已创建 ✓');
+  try {
+    if(id){
+      await sb.from('projects').update({name,priority,completion_num:comp,completion:String(comp),status}).eq('id',id);
+      await addChangeDb('update','更新项目 - '+name,'状态:'+status+', 完成度:'+Math.round(comp*100)+'%');
+    }else{
+      let {data:newProj}=await sb.from('projects').insert({name,priority,completion_num:comp,completion:String(comp),status}).select('id').single();
+      await addChangeDb('create','新增项目 - '+name,'优先级:'+priority);
+      // Auto-add client
+      if(customer){
+        let {data:existing}=await sb.from('clients').select('*').eq('name',customer);
+        if(!existing||existing.length===0){
+          await sb.from('clients').insert({name:customer,industry,status:'活跃',proj_ids:JSON.stringify([newProj.id])});
+        }
+      }
+    }
+    await refreshAll();
+    closeModal('mProj'); renderProjCards(); showToast(id?'已更新 ✓':'已创建 ✓');
+  }catch(e){console.error(e);showToast('保存失败');}
 }
 
 // Log Modal
@@ -2033,29 +2258,34 @@ function openLogModal(pid){
   document.getElementById('mLog').classList.add('active');
 }
 
-function saveLog(){
+async function saveLog(){
   let content=document.getElementById('fLogContent').value.trim(); if(!content){ showToast('请输入跟进内容'); return; }
   let pid=parseInt(document.getElementById('fLogPid').value);
-  let p=S.projects.find(x=>x.id===pid); if(!p) return;
   let dateVal=document.getElementById('fLogDate').value;
   let person=document.getElementById('fLogPerson').value.trim();
   let d=new Date(dateVal), ds=(d.getMonth()+1)+'.'+d.getDate(), dsort=dateVal;
-  p.logs.unshift({id:'log_'+Date.now(),date:ds,dateSort:dsort,note:content,person:person,timestamp:new Date().toISOString()});
-  p.logs.sort((a,b)=>b.dateSort.localeCompare(a.dateSort));
-  if(person){ S.defaultPerson=person; saveState(); }
-  addChange('log',`跟进记录 - ${p.name}`, content.slice(0,50));
-  saveState(); closeModal('mLog');
-  if(document.getElementById('projPanel').classList.contains('active')) openProjPanel(pid);
-  showToast('已添加 ✓');
-  pushToWechat(`项目跟进: ${p.name}`, `${person||'有人'}添加了跟进记录`, content.slice(0,80));
+  try {
+    await sb.from('logs').insert({project_id:pid,date:ds,note:content,date_sort:dsort,person});
+    if(person) S.defaultPerson=person;
+    await addChangeDb('log','跟进记录 - '+(S.projects.find(x=>x.id===pid)?.name||''),content.slice(0,50));
+    await refreshAll();
+    closeModal('mLog');
+    if(document.getElementById('projPanel').classList.contains('active')) openProjPanel(pid);
+    showToast('已添加 ✓');
+    pushToWechat('项目跟进: '+(S.projects.find(x=>x.id===pid)?.name||''),(person||'有人')+'添加了跟进记录',content.slice(0,80));
+  }catch(e){console.error(e);showToast('保存失败');}
 }
 
-function deleteProject(id){
+async function deleteProject(id){
   let p=S.projects.find(x=>x.id===id); if(!p) return;
   if(!confirm(`确定删除"${p.name}"及其${p.logs.length}条记录吗？`)) return;
-  S.projects=S.projects.filter(x=>x.id!==id);
-  addChange('delete',`删除项目 - ${p.name}`, `${p.logs.length}条记录`);
-  saveState(); closePanel('projPanel'); renderProjCards(); showToast('已删除');
+  try {
+    await sb.from('logs').delete().eq('project_id',id);
+    await sb.from('projects').delete().eq('id',id);
+    await addChangeDb('delete','删除项目 - '+p.name,p.logs.length+'条记录');
+    await refreshAll();
+    closePanel('projPanel'); renderProjCards(); showToast('已删除');
+  }catch(e){console.error(e);showToast('删除失败');}
 }
 
 // Client Modal
@@ -2077,29 +2307,36 @@ function openClientModal(cid){
   document.getElementById('mClient').classList.add('active');
 }
 
-function saveClient(){
+async function saveClient(){
   let name=document.getElementById('fClientName').value.trim(); if(!name){ showToast('请输入客户名称'); return; }
   let cid=document.getElementById('fClientId').value;
   let data={name,industry:document.getElementById('fClientIndustry').value.trim(),status:document.getElementById('fClientStatus').value,
     contact:document.getElementById('fClientContact').value.trim(),phone:document.getElementById('fClientPhone').value.trim(),
     address:document.getElementById('fClientAddr').value.trim(),note:document.getElementById('fClientNote').value.trim()};
-  if(cid){
-    let c=S.clients.find(x=>x.id===cid); if(!c) return;
-    Object.assign(c,data);
-    addChange('update',`更新客户 - ${name}`, `状态:${data.status}`);
-  }else{
-    S.clients.push({...data, id:'c'+Date.now(), projIds:[], createdAt:new Date().toISOString()});
-    addChange('create',`新增客户 - ${name}`, `行业:${data.industry}`);
-  }
-  saveState(); closeModal('mClient'); renderClients(); showToast(cid?'已更新 ✓':'已添加 ✓');
+  try {
+    if(cid){
+      let dbId=Number(cid.replace('c',''));
+      await sb.from('clients').update(data).eq('id',dbId);
+      await addChangeDb('update','更新客户 - '+name,'状态:'+data.status);
+    }else{
+      await sb.from('clients').insert({...data,proj_ids:'[]'});
+      await addChangeDb('create','新增客户 - '+name,'行业:'+data.industry);
+    }
+    await refreshAll();
+    closeModal('mClient'); renderClients(); showToast(cid?'已更新 ✓':'已添加 ✓');
+  }catch(e){console.error(e);showToast('保存失败');}
 }
 
-function deleteClient(cid){
+async function deleteClient(cid){
   let c=S.clients.find(x=>x.id===cid); if(!c) return;
   if(!confirm(`确定删除客户"${c.name}"吗？关联项目不受影响。`)) return;
-  S.clients=S.clients.filter(x=>x.id!==cid);
-  addChange('delete',`删除客户 - ${c.name}`, '');
-  saveState(); closePanel('clientPanel'); renderClients(); showToast('已删除');
+  try {
+    let dbId=Number(cid.replace('c',''));
+    await sb.from('clients').delete().eq('id',dbId);
+    await addChangeDb('delete','删除客户 - '+c.name,'');
+    await refreshAll();
+    closePanel('clientPanel'); renderClients(); showToast('已删除');
+  }catch(e){console.error(e);showToast('删除失败');}
 }
 
 // Resource Modal
@@ -2139,23 +2376,30 @@ function openContactModal(rid,idx){
   document.getElementById('mContact').classList.add('active');
 }
 
-function saveContact(){
+async function saveContact(){
   let name=document.getElementById('fContName').value.trim(); if(!name){ showToast('请输入姓名'); return; }
   let rid=document.getElementById('fContResId').value;
   let idx=parseInt(document.getElementById('fContIdx').value);
   let r=S.resources.find(x=>x.id===rid); if(!r) return;
-  if(!r.contacts) r.contacts=[];
   let contact={name,role:document.getElementById('fContRole').value.trim(),mobile:document.getElementById('fContMobile').value.trim(),
     wechat:document.getElementById('fContWechat').value.trim(),email:document.getElementById('fContEmail').value.trim(),
     note:document.getElementById('fContNote').value.trim()};
-  if(idx>=0){ r.contacts[idx]=contact; }
-  else{ r.contacts.push(contact); }
-  addChange(idx>=0?'update':'create',`联系人 - ${r.company} / ${name}`,'');
-  saveState(); closeModal('mContact'); openResPanel(rid); showToast(idx>=0?'已更新 ✓':'已添加 ✓');
+  let contacts = r.contacts||[];
+  if(idx>=0){ contacts[idx]=contact; }
+  else{ contacts.push(contact); }
+  try {
+    await sb.from('resources').update({contacts:JSON.stringify(contacts)}).eq('id',Number(rid.replace('r','')));
+    await addChangeDb(idx>=0?'update':'create','联系人 - '+(r.company_name||r.company||'')+' / '+name,'');
+    await refreshAll();
+    closeModal('mContact'); openResPanel(rid); showToast(idx>=0?'已更新 ✓':'已添加 ✓');
+  }catch(e){console.error(e);showToast('保存失败');}
 }
 
 // ===== CHANGES =====
-function addChange(type,title,desc){ S.changes.push({type,title,desc,time:new Date().toISOString()}); saveState(); }
+async function addChangeDb(type,title,desc){
+  try { await sb.from('changes').insert({action:type,target_type:'project',target_name:title,detail:desc}); } catch(e){}
+}
+function addChange(type,title,desc){ addChangeDb(type,title,desc); }
 
 function openChangesPanel(){
   let panel=document.getElementById('changesPanel');
@@ -2286,7 +2530,8 @@ function saveSettings(){
   let pushKey=document.getElementById('sPushKey').value.trim();
   let defaultPerson=document.getElementById('sDefaultPerson').value.trim();
   S.pushKey=pushKey; S.defaultPerson=defaultPerson;
-  saveState();
+  // Save personal settings to localStorage only (not shared DB)
+  localStorage.setItem('crm_v2_settings', JSON.stringify({pushKey, defaultPerson, pushEnabled: S.pushEnabled}));
   if(!pushKey){ S.pushEnabled=false; document.getElementById('pushStatus').innerHTML='<span class="si-status no">❌ 未配置</span>'; }
   updatePersonDatalist();
   closeModal('mSettings');
@@ -2308,16 +2553,35 @@ function exportData(){
   a.click(); showToast('数据已导出 ✓');
 }
 
-function importData(e){
+async function importData(e){
   let file=e.target.files[0]; if(!file) return;
   let reader=new FileReader();
-  reader.onload=function(ev){
+  reader.onload=async function(ev){
     try{
       let data=JSON.parse(ev.target.result);
       if(!data.projects){ showToast('无效的数据文件'); return; }
       if(!confirm('导入将覆盖当前所有数据，确定继续？')) return;
-      Object.assign(S,data);
-      saveState(); fixState();
+      // Clear existing data
+      await sb.from('logs').delete().neq('id',0);
+      await sb.from('projects').delete().neq('id',0);
+      await sb.from('partners').delete().neq('id',0);
+      await sb.from('clients').delete().neq('id',0);
+      // Import projects
+      for(let p of (data.projects||[])){
+        await sb.from('projects').insert({id:p.id,name:p.name,priority:p.priority||'中',completion:p.completion||'0',completion_num:p.completionNum||0,status:p.status||'进行中'});
+        for(let l of (p.logs||[])){
+          await sb.from('logs').insert({project_id:p.id,date:l.date||'',note:l.note||'',date_sort:l.dateSort||'',person:l.person||''});
+        }
+      }
+      // Import partners
+      for(let p of (data.partners||[])){
+        await sb.from('partners').insert({industry:p.industry||'',company:p.company||'',direction:p.direction||'',status:p.status||'',issue:p.issue||''});
+      }
+      // Import clients
+      for(let c of (data.clients||[])){
+        await sb.from('clients').insert({name:c.name||'',industry:c.industry||'',status:c.status||'',contact:c.contact||'',phone:c.phone||'',address:c.address||'',note:c.note||'',proj_ids:JSON.stringify(c.projIds||[])});
+      }
+      await refreshAll();
       renderDashboard(); renderProjCards(); renderClients(); renderResources();
       showToast('数据已导入 ✓');
     }catch(ex){ showToast('文件格式错误'); }
@@ -2325,14 +2589,21 @@ function importData(e){
   reader.readAsText(file);
 }
 
-function resetData(){
+async function resetData(){
   if(!confirm('确定重置所有数据吗？此操作不可撤销！建议先导出备份。')) return;
-  localStorage.removeItem('crm_v2');
+  try {
+    await sb.from('logs').delete().neq('id',0);
+    await sb.from('projects').delete().neq('id',0);
+    await sb.from('partners').delete().neq('id',0);
+    await sb.from('clients').delete().neq('id',0);
+    await sb.from('resources').delete().neq('id',0);
+    await sb.from('changes').delete().neq('id',0);
+  } catch(e){}
   S={projects:[],partners:[],clients:[],resources:[],changes:[],notifs:[],
     projFilter:'all',projView:'card',tlFilter:'all',clientFilter:'all',resFilter:'all',personFilter:'all',
-    projSearch:'',tlSearch:'',clientSearch:'',resSearch:'',pushKey:'',defaultPerson:'',pushEnabled:false};
-  loadSeed();
-  fixState();
+    projSearch:'',tlSearch:'',clientSearch:'',resSearch:'',pushKey:S.pushKey,defaultPerson:S.defaultPerson,pushEnabled:S.pushEnabled};
+  await seedToSupabase();
+  await refreshAll();
   renderDashboard(); renderProjCards(); renderClients(); renderResources();
   showToast('数据已重置 ✓');
 }
