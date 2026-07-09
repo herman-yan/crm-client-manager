@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天眼查 - 企业信息查询</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: linear-gradient(135deg, #1a56db 0%, #1e40af 50%, #1e3a8a 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 680px;
+  padding: 20px;
+  text-align: center;
+}
+
+/* Logo 区域 */
+.brand {
+  margin-bottom: 48px;
+}
+
+.brand-icon {
+  width: 72px;
+  height: 72px;
+  background: #fff;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+
+.brand-icon svg {
+  width: 42px;
+  height: 42px;
+}
+
+.brand h1 {
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.brand p {
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+/* 搜索区域 */
+.search-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.2);
+  transition: box-shadow 0.3s;
+}
+
+.search-box:focus-within {
+  box-shadow: 0 16px 56px rgba(0,0,0,0.3);
+}
+
+.search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 18px;
+  padding: 14px 16px;
+  color: #1a1a2e;
+  background: transparent;
+}
+
+.search-box input::placeholder {
+  color: #b0b0c0;
+}
+
+.search-box button {
+  background: #1a56db;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.search-box button:hover {
+  background: #1e40af;
+}
+
+.search-box button:active {
+  transform: scale(0.97);
+}
+
+/* 快捷标签 */
+.quick-tags {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.quick-tags span {
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9);
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.quick-tags span:hover {
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+}
+
+/* 搜索选项 */
+.search-options {
+  margin-top: 24px;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.option-btn {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.85);
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.option-btn:hover {
+  background: rgba(255,255,255,0.22);
+  color: #fff;
+  border-color: rgba(255,255,255,0.4);
+}
+
+.option-btn.active {
+  background: #fff;
+  color: #1a56db;
+  border-color: #fff;
+  font-weight: 600;
+}
+
+/* 搜索结果 iframe 区域 */
+.result-area {
+  margin-top: 32px;
+  width: 100%;
+  max-width: 1100px;
+  display: none;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+
+.result-area.show {
+  display: block;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #f8f9fc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.result-header .title {
+  font-size: 14px;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.result-header .close-btn {
+  background: #f1f5f9;
+  border: none;
+  color: #64748b;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.result-header .close-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.result-area iframe {
+  width: 100%;
+  height: 75vh;
+  border: none;
+}
+
+.iframe-notice {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.iframe-notice a {
+  color: #1a56db;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.iframe-notice a:hover {
+  text-decoration: underline;
+}
+
+/* 底部 */
+.footer {
+  margin-top: 48px;
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+}
+
+.footer a {
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+  .container { padding: 16px; }
+  .brand { margin-bottom: 32px; }
+  .brand h1 { font-size: 24px; }
+  .brand-icon { width: 56px; height: 56px; border-radius: 16px; }
+  .brand-icon svg { width: 32px; height: 32px; }
+
+  .search-box { border-radius: 12px; padding: 6px; }
+  .search-box input { font-size: 16px; padding: 12px; }
+  .search-box button { padding: 12px 20px; font-size: 14px; border-radius: 10px; }
+
+  .quick-tags span { font-size: 12px; padding: 6px 14px; }
+  .result-area iframe { height: 60vh; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Brand -->
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="3" width="20" height="18" rx="3" fill="#1a56db" stroke="#1a56db" stroke-width="1"/>
+        <line x1="7" y1="8" x2="17" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        <line x1="7" y1="12" x2="17" y2="12" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        <line x1="7" y1="16" x2="13" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1>天眼查</h1>
+    <p>企业工商信息 · 股东高管 · 风险监控 · 一秒查询</p>
+  </div>
+
+  <!-- 搜索框 -->
+  <div class="search-box" id="searchBox">
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="输入公司名称、统一社会信用代码或老板姓名..."
+      autocomplete="off"
+      autofocus
+    />
+    <button id="searchBtn" onclick="doSearch()">
+      <span style="margin-right:4px">🔍</span> 查一下
+    </button>
+  </div>
+
+  <!-- 快捷搜索 -->
+  <div class="quick-tags">
+    <span onclick="quickSearch('腾讯')">腾讯</span>
+    <span onclick="quickSearch('阿里巴巴')">阿里巴巴</span>
+    <span onclick="quickSearch('字节跳动')">字节跳动</span>
+    <span onclick="quickSearch('华为')">华为</span>
+    <span onclick="quickSearch('比亚迪')">比亚迪</span>
+    <span onclick="quickSearch('宁德时代')">宁德时代</span>
+  </div>
+
+  <!-- 搜索方式 -->
+  <div class="search-options">
+    <button class="option-btn active" id="btnNewTab" onclick="setMode('newtab')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      新标签页打开
+    </button>
+    <button class="option-btn" id="btnIframe" onclick="setMode('iframe')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      本页嵌入查看
+    </button>
+  </div>
+</div>
+
+<!-- 搜索结果区域（iframe 模式） -->
+<div class="result-area" id="resultArea">
+  <div class="result-header">
+    <span class="title" id="resultTitle">搜索结果</span>
+    <button class="close-btn" onclick="closeResult()" title="关闭">✕</button>
+  </div>
+  <div id="iframeContainer"></div>
+</div>
+
+<!-- 底部 -->
+<div class="footer">
+  数据来源 <a href="https://www.tianyancha.com" target="_blank">天眼查</a> · 本页仅提供搜索入口
+</div>
+
+<script>
+let searchMode = 'newtab';
+
+function setMode(mode) {
+  searchMode = mode;
+  document.getElementById('btnNewTab').classList.toggle('active', mode === 'newtab');
+  document.getElementById('btnIframe').classList.toggle('active', mode === 'iframe');
+  // 切换模式时关闭之前的结果
+  if (mode === 'newtab') closeResult();
+}
+
+function quickSearch(keyword) {
+  document.getElementById('searchInput').value = keyword;
+  doSearch();
+}
+
+function doSearch() {
+  const input = document.getElementById('searchInput');
+  const keyword = input.value.trim();
+  if (!keyword) {
+    input.focus();
+    input.style.border = '2px solid #ef4444';
+    setTimeout(() => { input.style.border = ''; }, 1500);
+    return;
+  }
+
+  const searchUrl = 'https://www.tianyancha.com/search?key=' + encodeURIComponent(keyword);
+
+  if (searchMode === 'iframe') {
+    openInIframe(searchUrl, keyword);
+  } else {
+    window.open(searchUrl, '_blank');
+  }
+}
+
+function openInIframe(url, keyword) {
+  const area = document.getElementById('resultArea');
+  const container = document.getElementById('iframeContainer');
+  const title = document.getElementById('resultTitle');
+
+  title.textContent = '正在查询：' + keyword;
+
+  // 先尝试 iframe
+  container.innerHTML = '<iframe src="' + url + '" sandbox="allow-same-origin allow-scripts allow-forms allow-popups" loading="lazy"></iframe>';
+  area.classList.add('show');
+
+  // 3秒后检测 iframe 是否被阻止
+  setTimeout(function() {
+    try {
+      const iframe = container.querySelector('iframe');
+      // 如果无法访问 iframe 内容（跨域），说明可能被 X-Frame-Options 阻止
+      // 显示备选方案
+      if (iframe) {
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        if (!doc || !doc.body || doc.body.innerHTML.trim() === '') {
+          showFallback(url, keyword, container);
+        }
+      }
+    } catch(e) {
+      // 跨域访问被阻止，说明 iframe 加载成功但无法检测内容
+      // 这是正常的，不做处理
+    }
+  }, 3000);
+}
+
+function showFallback(url, keyword, container) {
+  container.innerHTML = `
+    <div class="iframe-notice">
+      <p style="font-size:16px;margin-bottom:12px;">⚠️ 天眼查不支持在本页内嵌显示</p>
+      <p>请点击下方按钮在新标签页中查看 <strong>「${keyword}」</strong> 的搜索结果：</p>
+      <a href="${url}" target="_blank" style="display:inline-block;margin-top:16px;padding:12px 32px;background:#1a56db;color:#fff;border-radius:10px;font-size:15px;text-decoration:none;">
+        🔍 打开天眼查查看「${keyword}」
+      </a>
+    </div>
+  `;
+}
+
+function closeResult() {
+  const area = document.getElementById('resultArea');
+  area.classList.remove('show');
+  document.getElementById('iframeContainer').innerHTML = '';
+}
+
+// 回车键搜索
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doSearch();
+});
+</script>
+
+</body>
+</html>
