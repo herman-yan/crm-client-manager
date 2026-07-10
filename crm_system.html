@@ -1674,6 +1674,8 @@ async function init(){
     if(!p.logs) p.logs=[];
     p.logs.sort((a,b)=>b.dateSort.localeCompare(a.dateSort));
   });
+  // Merge extended fields from localStorage (person, customer, etc.)
+  mergeExtFields();
 
   renderDashboard();
   updateNotifBadge();
@@ -1691,18 +1693,27 @@ async function seedToSupabase(){
   let projects = INITIAL_DATA.projects;
   for(let i=0;i<projects.length;i++){
     let p = projects[i];
-    let {data:proj} = await sb.from('projects').insert({
+    let basicFields = {
       id: i+1,
       name: p.name,
       priority: p.priority||'中',
       completion: p.completion||'0',
       completion_num: p.completionNum||0,
-      status: p.status||'进行中',
+      status: p.status||'进行中'
+    };
+    let extFields = {
       person: p.person||'',
       customer: p.customer||'',
       industry: p.industry||'',
       amount: p.amount||0
-    }).select('id').single();
+    };
+    let {data:proj};
+    try{
+      ({data:proj} = await sb.from('projects').insert({...basicFields,...extFields}).select('id').single());
+    }catch(e){
+      console.log('[seed] Extended fields not in DB, using basic only');
+      ({data:proj} = await sb.from('projects').insert(basicFields).select('id').single());
+    }
 
     if(p.logs){
       for(let log of p.logs){
@@ -1903,10 +1914,27 @@ async function refreshAll(){
     S.projects=projects||[];
     S.partners=(partners||[]).map(p=>({...p,id:'p'+p.id}));
     S.clients=(clients||[]).map(c=>({...c,id:'c'+c.id,projIds:parseProjIds(c.proj_ids)}));
-    S.resources=(resources||[]).map(r=>{ let cs=[];try{cs=JSON.parse(r.contacts||'[]');}catch(e){} return {...r,contacts:cs}; });
+    S.resources=(resources||[]).map(r=>{
+      let cs=[];try{cs=JSON.parse(r.contacts||'[]');}catch(e){}
+      return {...r,contacts:cs,company:r.company_name||r.company||'',industry:r.category||r.industry||'',business:r.description||r.business||'',fullName:r.full_name||r.fullName||'',phone:r.phone||'',address:r.address||'',status:r.status||'待开发',direction:r.direction||''};
+    });
     S.changes=(changes||[]).map(c=>({type:c.action,title:c.target_name,desc:c.detail,time:c.created_at}));
     // Preserve settings
   }catch(e){console.error('refreshAll error:',e);}
+  mergeExtFields();
+}
+
+function mergeExtFields(){
+  let localProj=JSON.parse(localStorage.getItem('crm_proj_ext')||'{}');
+  S.projects.forEach(p=>{
+    let ext=localProj[p.id];
+    if(ext){
+      if(!p.person) p.person=ext.person||'';
+      if(!p.customer) p.customer=ext.customer||'';
+      if(!p.industry) p.industry=ext.industry||'';
+      if(p.amount===undefined||p.amount===null) p.amount=ext.amount||0;
+    }
+  });
 }
 
 function renderDashboard(){
@@ -2384,22 +2412,53 @@ async function saveProject(){
     if(old) oldStatus = old.status;
   }
 
+  // Basic fields that definitely exist in DB
+  let basicFields={name,priority,completion_num:comp,completion:String(comp),status};
+  // Extended fields that may not exist in DB yet
+  let extFields={person,customer,industry,amount};
+
+  // Save extended fields to localStorage as fallback
+  let localProj=JSON.parse(localStorage.getItem('crm_proj_ext')||'{}');
+  if(id){ localProj[id]={...extFields}; }else{ localProj['_pending']={...extFields}; }
+  localStorage.setItem('crm_proj_ext',JSON.stringify(localProj));
+
   try {
+    let newProjId=id;
     if(id){
-      await sb.from('projects').update({name,priority,completion_num:comp,completion:String(comp),status,person,customer,industry,amount}).eq('id',id);
+      // Try full update first, fall back to basic fields
+      try{
+        await sb.from('projects').update({...basicFields,...extFields}).eq('id',id);
+      }catch(e2){
+        console.log('[saveProject] Extended fields not in DB, using basic only');
+        await sb.from('projects').update(basicFields).eq('id',id);
+      }
       await addChangeDb('update','更新项目 - '+name,'状态:'+status+', 完成度:'+Math.round(comp*100)+'%');
     }else{
-      let {data:newProj}=await sb.from('projects').insert({name,priority,completion_num:comp,completion:String(comp),status,person,customer,industry,amount}).select('id').single();
+      let newProj;
+      try{
+        ({data:newProj}=await sb.from('projects').insert({...basicFields,...extFields}).select('id').single());
+      }catch(e2){
+        console.log('[saveProject] Extended fields not in DB, using basic only');
+        ({data:newProj}=await sb.from('projects').insert(basicFields).select('id').single());
+      }
+      newProjId=newProj.id;
+      // Save extended fields with the real ID
+      localProj=JSON.parse(localStorage.getItem('crm_proj_ext')||'{}');
+      delete localProj['_pending'];
+      localProj[newProjId]={...extFields};
+      localStorage.setItem('crm_proj_ext',JSON.stringify(localProj));
       await addChangeDb('create','新增项目 - '+name,'优先级:'+priority);
       // Auto-add client
       if(customer){
         let {data:existing}=await sb.from('clients').select('*').eq('name',customer);
         if(!existing||existing.length===0){
-          await sb.from('clients').insert({name:customer,industry,status:'活跃',proj_ids:JSON.stringify([newProj.id])});
+          await sb.from('clients').insert({name:customer,industry,status:'活跃',proj_ids:JSON.stringify([newProjId])});
         }
       }
     }
     await refreshAll();
+    // Merge extended fields from localStorage into loaded projects
+    mergeExtFields();
     closeModal('mProj'); renderProjCards(); showToast(id?'已更新 ✓':'已创建 ✓');
 
     // DingTalk notification for status change
@@ -2421,7 +2480,7 @@ async function saveProject(){
         (amount ? `金额：¥${amount.toLocaleString()}` : '')
       );
     }
-  }catch(e){console.error(e);showToast('保存失败');}
+  }catch(e){console.error(e);showToast('保存失败: '+(e.message||'未知错误'));}
 }
 
 // Log Modal
@@ -2853,7 +2912,13 @@ async function importData(e){
       await sb.from('clients').delete().neq('id',0);
       // Import projects
       for(let p of (data.projects||[])){
-        await sb.from('projects').insert({id:p.id,name:p.name,priority:p.priority||'中',completion:p.completion||'0',completion_num:p.completionNum||0,status:p.status||'进行中',person:p.person||'',customer:p.customer||'',industry:p.industry||'',amount:p.amount||0});
+        let basicF={id:p.id,name:p.name,priority:p.priority||'中',completion:p.completion||'0',completion_num:p.completionNum||0,status:p.status||'进行中'};
+        let extF={person:p.person||'',customer:p.customer||'',industry:p.industry||'',amount:p.amount||0};
+        try{
+          await sb.from('projects').insert({...basicF,...extF});
+        }catch(e){
+          await sb.from('projects').insert(basicF);
+        }
         for(let l of (p.logs||[])){
           await sb.from('logs').insert({project_id:p.id,date:l.date||'',note:l.note||'',date_sort:l.dateSort||'',person:l.person||''});
         }
