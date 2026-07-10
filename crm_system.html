@@ -2286,13 +2286,16 @@ function renderResources(){
     let cs=r.contacts||[];
     return `<div class="cl-card" onclick="openResPanel('${r.id}')">
       <div class="cl-top"><div class="cl-name">${esc(r.company)}</div><span class="cl-industry">${esc(r.industry)}</span></div>
+      ${r.fullName && r.fullName!==r.company?`<div style="font-size:12px;color:var(--text2);margin-bottom:6px">${esc(r.fullName)}</div>`:''}
       <div class="cl-info">
         ${r.address?`<span>📍 ${esc(r.address)}</span>`:''}
         ${r.phone?`<span>📞 ${esc(r.phone)}</span>`:''}
-        ${r.business?`<span>🔧 ${esc(r.business).slice(0,50)}...</span>`:''}
+        ${r.website?`<span>🌐 <a href="${esc(r.website)}" target="_blank" style="color:var(--pri)">${esc(r.website)}</a></span>`:''}
+        ${r.business?`<span>🔧 ${esc(r.business)}</span>`:''}
+        ${r.direction?`<span>🤝 ${esc(r.direction)}</span>`:''}
+        ${cs.length?`<span>👥 联系人: ${cs.map(c=>c.name+(c.role?'('+c.role+')':'')).join('、')}</span>`:''}
       </div>
       <div class="cl-foot">
-        <div class="cl-projects">👥 ${cs.length}位联系人</div>
         <span class="pc-status ${statusCls[r.status]||'st-待启动'}">${r.status}</span>
       </div>
     </div>`;
