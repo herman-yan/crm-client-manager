@@ -2766,9 +2766,28 @@ function testPush(){
 
 // ===== DINGTALK PUSH (via local proxy to bypass CORS) =====
 async function dingtalkRequest({webhook, secret, message}) {
-  // Browser-side DingTalk signing + push (no proxy needed)
   if(!webhook) return {errcode:-1, errmsg:'未配置Webhook'};
-  
+
+  // 方案1：通过本地代理服务器发送（解决CORS + 加签问题）
+  // 启动方式：node proxy_server.js，然后访问 http://localhost:8088
+  try {
+    const r = await fetch('/api/dingtalk', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({webhook, secret, message}),
+      signal: AbortSignal.timeout(20000)
+    });
+    if(r.ok){
+      let data;
+      try { data = await r.json(); } catch(e){ data = {errcode:-1, errmsg:'响应解析失败'}; }
+      return data;
+    }
+  } catch(e) {
+    // 本地代理未运行，尝试直连
+    console.log('[DingTalk] 本地代理未运行，尝试直连...');
+  }
+
+  // 方案2：浏览器端直连（仅当从 localhost 访问或机器人未开启加签时可用）
   try {
     let apiUrl = webhook;
     if(secret){
@@ -2783,26 +2802,22 @@ async function dingtalkRequest({webhook, secret, message}) {
       apiUrl = webhook + '&timestamp=' + timestamp + '&sign=' + encodeURIComponent(signBase64);
     }
 
-    // Retry up to 3 times
-    for(let i=0;i<3;i++){
-      try {
-        const r = await fetch(apiUrl, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(message),
-          signal: AbortSignal.timeout(15000)
-        });
-        let data;
-        try { data = await r.json(); } catch(e){ data = {errcode:-1, errmsg:'响应解析失败'}; }
-        if(data.errcode===0) return data;
-        if(r.status>=500 && i<2){ await new Promise(ok=>setTimeout(ok,1000*(i+1))); continue; }
-        return data;
-      }catch(e){
-        if(i<2){ await new Promise(ok=>setTimeout(ok,1000*(i+1))); continue; }
-        return {errcode:-1, errmsg: e.message};
-      }
+    const r = await fetch(apiUrl, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(message),
+      signal: AbortSignal.timeout(15000)
+    });
+    let data;
+    try { data = await r.json(); } catch(e){ data = {errcode:-1, errmsg:'响应解析失败'}; }
+    return data;
+  } catch(e) {
+    // 直连也失败（通常是因为CORS阻止或网络问题）
+    if(e.message && e.message.includes('Failed to fetch')){
+      return {errcode:-1, errmsg:'推送需要启动本地代理服务器。请在项目目录运行: node proxy_server.js，然后通过 http://localhost:8088 访问CRM'};
     }
-  }catch(e){ return {errcode:-1, errmsg: e.message}; }
+    return {errcode:-1, errmsg: e.message};
+  }
 }
 
 async function sendDingtalk(title, text){
