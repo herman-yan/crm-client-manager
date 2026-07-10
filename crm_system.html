@@ -1864,7 +1864,14 @@ function fixState(){
   saveState();
 }
 
-function saveState(){} // Supabase handles persistence
+function saveState(){
+  try {
+    localStorage.setItem('crm_v2_settings', JSON.stringify({
+      pushKey: S.pushKey, dingtalkWebhook: S.dingtalkWebhook, dingtalkSecret: S.dingtalkSecret,
+      defaultPerson: S.defaultPerson, pushEnabled: S.pushEnabled, dingtalkEnabled: S.dingtalkEnabled
+    }));
+  } catch(e){}
+}
 
 function parseDate(d){
   d = String(d).replace(/[日进展展]/g,'').replace(/col\d+/,'').trim();
@@ -2879,6 +2886,10 @@ async function dingtalkRequest({webhook, secret, message}) {
 
 async function sendDingtalk(title, text){
   if(!S.dingtalkWebhook) return;
+  if(!S.dingtalkSecret){
+    console.warn('[DingTalk] 未配置加签密钥，跳过自动推送。请在设置中填写密钥并通过测试验证。');
+    return;
+  }
   let msg = {
     msgtype: 'markdown',
     markdown: {
@@ -2887,8 +2898,8 @@ async function sendDingtalk(title, text){
     }
   };
   dingtalkRequest({webhook: S.dingtalkWebhook, secret: S.dingtalkSecret, message: msg})
-    .then(d => { if(d.errcode!==0) console.error('Dingtalk push error:', d); })
-    .catch(() => {});
+    .then(d => { if(d.errcode!==0) console.error('[DingTalk] 推送失败:', d); })
+    .catch(e => { console.error('[DingTalk] 推送异常:', e); });
 }
 
 async function testDingtalk(){
