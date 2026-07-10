@@ -2772,20 +2772,34 @@ function testPush(){
 
 // ===== DINGTALK PUSH (via local proxy to bypass CORS) =====
 // 浏览器端 HMAC-SHA256 签名（钉钉加签验证）
+// 钉钉签名算法: timestamp + "\n" + secret → HMAC-SHA256(secret为key) → Base64 → URLEncode
 async function dingtalkSign(webhook, secret){
+  // 钉钉要求毫秒级时间戳
   const timestamp = Date.now();
+  // 签名字符串: 时间戳 + 换行 + 密钥（注意：密钥既作为HMAC的key，也出现在签名字符串中）
   const stringToSign = timestamp + '\n' + secret;
   const enc = new TextEncoder();
   const keyData = enc.encode(secret);
   const signData = enc.encode(stringToSign);
   const cryptoKey = await crypto.subtle.importKey('raw', keyData, {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
   const signature = await crypto.subtle.sign('HMAC', cryptoKey, signData);
-  const signBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
-  return webhook + '&timestamp=' + timestamp + '&sign=' + encodeURIComponent(signBase64);
+  // 将 ArrayBuffer 转为 Base64（手动转换避免 btoa 二进制字符问题）
+  const bytes = new Uint8Array(signature);
+  let binary = '';
+  for(let i = 0; i < bytes.length; i++){
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const signBase64 = btoa(binary);
+  // URL 编码签名（+ → %2B, / → %2F, = → %3D）
+  const signEncoded = encodeURIComponent(signBase64);
+  return webhook + '&timestamp=' + timestamp + '&sign=' + signEncoded;
 }
 
 async function dingtalkRequest({webhook, secret, message}) {
   if(!webhook) return {errcode:-1, errmsg:'未配置Webhook'};
+
+  // 去除密钥首尾空格（防止复制粘贴时带入不可见字符导致签名不匹配）
+  secret = (secret || '').trim();
 
   // 构建带签名的 URL（如果配置了 secret）
   let signedUrl = webhook;
@@ -2809,18 +2823,39 @@ async function dingtalkRequest({webhook, secret, message}) {
   } catch(e) { /* 本地代理未运行，降级到方案2 */ }
 
   // 方案2：通过 CORS 代理 + 浏览器签名（GitHub Pages 用户靠这个通道）
+  // proxy.cors.sh 对 URL 编码的目标地址会把所有参数作为整体传递，不会误解析 &timestamp= 和 &sign=
   try {
-    const proxyUrl = 'https://proxy.cors.sh/' + signedUrl;
+    const proxyUrl = 'https://proxy.cors.sh/' + encodeURIComponent(signedUrl);
+    console.log('[DingTalk] 尝试 CORS 代理(编码)...');
     const r = await fetch(proxyUrl, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify(message),
       signal: AbortSignal.timeout(20000)
     });
-    try { return await r.json(); }
-    catch(e){ return {errcode:-1, errmsg:'代理响应解析失败'}; }
+    const txt = await r.text();
+    console.log('[DingTalk] 代理响应:', txt.slice(0,300));
+    try { return JSON.parse(txt); }
+    catch(e){ return {errcode:-1, errmsg:'代理响应: ' + txt.slice(0,200)}; }
   } catch(e) {
+    console.log('[DingTalk] 编码代理失败:', e.message);
+    // 回退: 原始 URL（不编码，有些代理只接受这种格式）
+    try {
+      const proxyUrl2 = 'https://proxy.cors.sh/' + signedUrl;
+      console.log('[DingTalk] 尝试 CORS 代理(原始)...');
+      const r2 = await fetch(proxyUrl2, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(message),
+        signal: AbortSignal.timeout(20000)
+      });
+      const txt2 = await r2.text();
+      console.log('[DingTalk] 原始代理响应:', txt2.slice(0,300));
+      try { return JSON.parse(txt2); }
+      catch(e2){ return {errcode:-1, errmsg:'原始代理响应: ' + txt2.slice(0,200)}; }
+    } catch(e2) {
     // 方案3：直连兜底（部分浏览器/网络环境可能不阻止 CORS）
+    console.log('[DingTalk] 尝试直连...');
     try {
       const r = await fetch(signedUrl, {
         method:'POST',
@@ -2828,10 +2863,12 @@ async function dingtalkRequest({webhook, secret, message}) {
         body: JSON.stringify(message),
         signal: AbortSignal.timeout(10000)
       });
-      try { return await r.json(); }
-      catch(e2){ return {errcode:-1, errmsg:'响应解析失败'}; }
-    } catch(e2) {
-      return {errcode:-1, errmsg: '推送失败: 网络不可达或CORS阻止，可启动本地代理后通过 localhost:8088 访问'};
+      const txt = await r.text();
+      try { return JSON.parse(txt); }
+      catch(e3){ return {errcode:-1, errmsg:'直连响应: ' + txt.slice(0,200)}; }
+    } catch(e3) {
+      return {errcode:-1, errmsg: '推送失败: 所有通道均不可用。可启动本地代理后通过 localhost:8088 访问'};
+    }
     }
   }
 }
@@ -2875,7 +2912,12 @@ async function testDingtalk(){
       statusEl.innerHTML = '<span class="si-status ok">✅ 推送成功！请查看钉钉群</span>';
       S.dingtalkEnabled=true; saveState();
     }else{
-      statusEl.innerHTML = '<span class="si-status no">❌ 推送失败：'+(data.errmsg||'请检查配置')+'</span>';
+      let errMsg = data.errmsg || '未知错误';
+      let hint = '';
+      if(errMsg.includes('签名') || errMsg.includes('sign')){
+        hint = '<br><small style="color:#d97706">💡 密钥可能不正确。请去钉钉群 → 群设置 → 智能群助手 → 机器人 → 安全设置 → 复制 <b>加签密钥(SEC)</b>，<br>确认在 CRM 设置中"粘贴钉钉机器人 加签密钥 SEC"处正确填写。</small>';
+      }
+      statusEl.innerHTML = '<span class="si-status no">❌ 推送失败：'+errMsg+'</span>'+hint;
       S.dingtalkEnabled=false; saveState();
     }
   }catch(e){
