@@ -127,10 +127,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 .tl .tl-date .tld{font-size:var(--fs-xs);font-weight:700;color:var(--pri);background:var(--pri-bg);padding:2px 8px;border-radius:6px}
 .tl .tl-date .tld.today{background:var(--pri);color:#fff}
 .tl .tl-date .tld-old{background:var(--bg);color:var(--text3)}
-.tl .tl-log{font-size:var(--fs-sm);color:var(--text);line-height:1.5;word-break:break-all;position:relative}
-.tl .tl-edit-btn{display:none;position:absolute;right:0;top:50%;transform:translateY(-50%);background:none;border:1px solid var(--brd);border-radius:4px;width:22px;height:22px;font-size:11px;color:var(--text3);cursor:pointer;line-height:1;padding:0}
-.tl .tl-item:hover .tl-edit-btn{display:inline-flex;align-items:center;justify-content:center}
-.tl .tl-edit-btn:hover{background:var(--pri-bg);color:var(--pri);border-color:var(--pri-l)}
+.tl .tl-log{font-size:var(--fs-sm);color:var(--text);line-height:1.5;word-break:break-all}
 .tl .tl-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:600;vertical-align:middle}
 .tl .tl-person{display:inline-block;font-size:10px;padding:1px 7px;border-radius:4px;margin-left:4px;font-weight:600;vertical-align:middle;background:var(--pri);color:#fff}
 
@@ -214,7 +211,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 .feed-title{font-size:var(--fs-sm);font-weight:600}
 .feed-desc{font-size:var(--fs-xs);color:var(--text2);margin-top:2px;word-break:break-all}
 .feed-time{font-size:10px;color:var(--text3);margin-top:2px}
-.feed-person{display:inline-block;font-size:10px;padding:1px 7px;border-radius:4px;margin-left:6px;font-weight:600;vertical-align:middle;background:var(--pri);color:#fff;cursor:pointer}
 
 /* ===== STATUS TIMELINE ===== */
 .stl-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--brd);cursor:pointer;transition:.15s}
@@ -447,20 +443,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
     <div class="fg"><label>关联客户</label><input id="fProjClient" placeholder="客户/合作单位"></div>
     <div class="fg"><label>行业领域</label><input id="fProjIndustry" placeholder="如：新能源、机器人"></div>
     <div class="fg"><label>预计金额(万元)</label><input type="number" id="fProjAmt" min="0" placeholder="预计金额"></div>
+    <div class="fg"><label>项目负责人</label><input id="fProjPerson" placeholder="如：陈熙源"></div>
     <div style="display:flex;gap:8px"><button class="btn btn-out" onclick="closeModal('mProj')">取消</button><button class="btn btn-pri" onclick="saveProject()">保存</button></div>
   </div>
 </div></div>
 
 <!-- Log Modal -->
 <div class="modal-overlay" id="mLog"><div class="modal">
-  <div class="m-h"><h3 id="mLogTitle">添加跟进记录</h3><button class="m-close" onclick="closeModal('mLog')">✕</button></div>
+  <div class="m-h"><h3>添加跟进记录</h3><button class="m-close" onclick="closeModal('mLog')">✕</button></div>
   <div class="m-b">
-    <input type="hidden" id="fLogId">
     <input type="hidden" id="fLogPid">
     <div class="fg"><label>跟进内容 *</label><textarea id="fLogContent" rows="4" placeholder="记录进展、问题、下一步计划..."></textarea></div>
     <div class="fg"><label>日期</label><input type="date" id="fLogDate"></div>
-    <div class="fg"><label>填写人</label><input id="fLogPerson" placeholder="您的姓名" list="personList"><datalist id="personList"></datalist></div>
-    <div style="display:flex;gap:8px"><button class="btn btn-out" onclick="closeModal('mLog')">取消</button><button class="btn btn-pri" id="btnSaveLog" onclick="saveLog()">保存</button></div>
+    <div class="fr"><div class="fg"><label>填写人</label><input id="fLogPerson" placeholder="您的姓名" list="personList"><datalist id="personList"></datalist></div></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-out" onclick="closeModal('mLog')">取消</button><button class="btn btn-pri" onclick="saveLog()">保存</button></div>
   </div>
 </div></div>
 
@@ -1701,7 +1697,11 @@ async function seedToSupabase(){
       priority: p.priority||'中',
       completion: p.completion||'0',
       completion_num: p.completionNum||0,
-      status: p.status||'进行中'
+      status: p.status||'进行中',
+      person: p.person||'',
+      customer: p.customer||'',
+      industry: p.industry||'',
+      amount: p.amount||0
     }).select('id').single();
 
     if(p.logs){
@@ -1773,7 +1773,7 @@ function init_legacy(){
 
 function loadSeed(){
   S.projects = INITIAL_DATA.projects.map((p,i)=>({
-    ...p, id:i+1, customer:'', industry:'', amount:0,
+    ...p, id:i+1, customer:'', industry:'', amount:0, person:'',
     createdAt: new Date().toISOString(),
     logs: (p.logs||[]).map(l=>({...l, id:'log_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)}))
   }));
@@ -1943,7 +1943,7 @@ function renderDashboard(){
   let recent=allLogs.slice(0,8);
   document.getElementById('recentFeed').innerHTML = recent.length?recent.map((l,i)=>{
     let c=['f1','f2','f3'][i%3];
-    return `<div class="feed-item" onclick="openProjPanel(${l.projId})"><div class="feed-dot ${c}"></div><div class="feed-body"><div class="feed-title">${esc(l.projName)}</div><div class="feed-desc">${esc(l.note).slice(0,80)}</div><div class="feed-time">${l.date} · ${fmtTime(l.dateSort)}${l.person?`<span class="feed-person" onclick="event.stopPropagation();openEditLogModal('${l.id}','${l.dateSort}','${esc(l.note).replace(/'/g,"\\'")}','${esc(l.person).replace(/'/g,"\\'")}')">👤 ${esc(l.person)}</span>`:''}</div></div></div>`;
+    return `<div class="feed-item" onclick="openProjPanel(${l.projId})"><div class="feed-dot ${c}"></div><div class="feed-body"><div class="feed-title">${esc(l.projName)}</div><div class="feed-desc">${esc(l.note).slice(0,80)}</div><div class="feed-time">${l.date} · ${fmtTime(l.dateSort)}</div></div></div>`;
   }).join(''):'<div class="empty"><div class="ei">📋</div><div class="et">暂无动态</div></div>';
 
   // Status timeline — detailed with last 5 log nodes per project
@@ -2068,7 +2068,7 @@ function renderProjCards(){
     let pc=p.priority==='高'?'tg-hi':(p.priority==='战败'?'tg-loss':(p.priority==='中'?'tg-mi':'tg-lo'));
     return `<div class="pc" onclick="openProjPanel(${p.id})">
       <div class="pc-top"><div class="pc-name">${esc(p.name)}</div><span class="pc-status st-${p.status}">${p.status}</span></div>
-      <div class="pc-meta"><span class="${pc}">● ${p.priority}</span><span>📊 ${cp}%</span><span>📝 ${p.logs.length}条</span></div>
+      <div class="pc-meta"><span class="${pc}">● ${p.priority}</span><span>📊 ${cp}%</span><span>📝 ${p.logs.length}条</span>${p.person?`<span>👤 ${esc(p.person)}</span>`:''}</div>
       <div class="pc-bar"><div class="pc-bar-f ${bc}" style="width:${cp}%"></div></div>
       ${ll?`<div class="pc-last"><span class="pcd">${ll.date}</span>${ll.person?`<span style="color:var(--pri);font-weight:600;margin-right:2px">${esc(ll.person)}:</span>`:''}${esc(ll.note).slice(0,60)}</div>`:'<div class="pc-last">暂无记录</div>'}
       <div style="margin-top:8px;display:flex;gap:6px">
@@ -2152,6 +2152,7 @@ function openProjPanel(id){
         <span class="${pc}" style="font-size:13px">● ${p.priority}</span>
         <span style="font-size:13px;color:var(--text2)">📝 ${p.logs.length}条跟进</span>
         ${p.customer?`<span style="font-size:13px;color:var(--pri)">🏢 ${esc(p.customer)}</span>`:''}
+        ${p.person?`<span style="font-size:13px;color:var(--text2)">👤 ${esc(p.person)}</span>`:''}
       </div>
       ${projPersons.length?`<div style="margin-bottom:6px;font-size:12px;color:var(--text2)">👥 跟进人：${projPersons.map(n=>`<span class="tl-person" style="background:var(--pri);color:#fff">${esc(n)}</span>`).join(' ')}</div>`:''}
       <div class="pc-bar" style="margin:8px 0"><div class="pc-bar-f ${bc}" style="width:${cp}%"></div></div>
@@ -2161,10 +2162,7 @@ function openProjPanel(id){
     <div class="card">
       <div class="card-head"><h3>📝 快速添加跟进</h3></div>
       <div style="display:flex;gap:6px"><input id="quickLog" style="flex:1;padding:9px 12px;border:1px solid var(--brd);border-radius:8px;font-size:13px;font-family:inherit;outline:none" placeholder="输入跟进内容..."><button class="btn btn-pri btn-sm" onclick="quickAddLog(${p.id})">添加</button></div>
-      <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
-        <label style="font-size:12px;color:var(--text2);white-space:nowrap">填写人：</label>
-        <input id="quickLogPerson" style="flex:1;padding:6px 10px;border:1px solid var(--brd);border-radius:6px;font-size:12px;font-family:inherit;outline:none" placeholder="您的姓名" list="personList">
-      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">填写人：${S.defaultPerson||'未设置'} · 可在设置中修改</div>
     </div>
     <div class="card">
       <div class="card-head"><h3>📅 跟进时间线</h3><button class="btn btn-out btn-sm" onclick="openLogModal(${p.id})">+ 详细</button></div>
@@ -2183,14 +2181,14 @@ function buildTimeline(logs){
     if(l.note.includes('放弃')||l.note.includes('流失')) dotClass=' style="background:#dc2626"';
     else if(l.note.includes('延期')||l.note.includes('等待')) dotClass=' style="background:#d97706"';
     else if(l.dateSort>'2026-06-20') dotClass=' style="background:#059669"';
-    return `<div class="tl-item"><div class="tl-dot"${dotClass}></div><div class="tl-date"><span class="tld">${l.date}</span>${l.person?` · <span style="color:var(--pri);font-weight:600;font-size:11px;cursor:pointer" onclick="event.stopPropagation();openEditLogModal('${l.id}','${l.dateSort}','${esc(l.note).replace(/'/g,"\\'")}','${esc(l.person||'').replace(/'/g,"\\'")}')" title="编辑跟进人">${esc(l.person)}</span>`:''}</div><div class="tl-log">${esc(l.note)}<button class="tl-edit-btn" onclick="event.stopPropagation();openEditLogModal('${l.id}','${l.dateSort}','${esc(l.note).replace(/'/g,"\\'")}','${esc(l.person||'').replace(/'/g,"\\'")}')" title="编辑本条记录">✎</button></div></div>`;
+    return `<div class="tl-item"><div class="tl-dot"${dotClass}></div><div class="tl-date"><span class="tld">${l.date}</span>${l.person?` · <span style="color:var(--pri);font-weight:600;font-size:11px">${esc(l.person)}</span>`:''}</div><div class="tl-log">${esc(l.note)}</div></div>`;
   }).join('')+'</div>';
 }
 
 async function quickAddLog(pid){
   let inp=document.getElementById('quickLog'); if(!inp||!inp.value.trim()) return;
   let p=S.projects.find(x=>x.id===pid); if(!p) return;
-  let person=(document.getElementById('quickLogPerson')||{}).value||'';
+  let person=S.defaultPerson||'';
   let now=new Date(), ds=(now.getMonth()+1)+'.'+now.getDate(), dsort=now.toISOString().slice(0,10);
   let note=inp.value.trim();
   try {
@@ -2352,6 +2350,7 @@ function openProjModal(id){
     document.getElementById('fProjClient').value=p.customer||'';
     document.getElementById('fProjIndustry').value=p.industry||'';
     document.getElementById('fProjAmt').value=p.amount||0;
+    document.getElementById('fProjPerson').value=p.person||'';
   }else{
     document.getElementById('fProjName').value='';
     document.getElementById('fProjPri').value='高';
@@ -2359,6 +2358,7 @@ function openProjModal(id){
     document.getElementById('fProjClient').value='';
     document.getElementById('fProjIndustry').value='';
     document.getElementById('fProjAmt').value='';
+    document.getElementById('fProjPerson').value='';
   }
   document.getElementById('mProj').classList.add('active');
 }
@@ -2371,6 +2371,7 @@ async function saveProject(){
   let customer=document.getElementById('fProjClient').value.trim();
   let industry=document.getElementById('fProjIndustry').value.trim();
   let amount=parseFloat(document.getElementById('fProjAmt').value)||0;
+  let person=document.getElementById('fProjPerson').value.trim();
 
   let status; if(priority==='战败') status='已流失'; else if(comp>=.9) status='即将完成'; else if(comp>=.5) status='进行中'; else if(comp>0) status='初期接触'; else status='待启动';
 
@@ -2383,10 +2384,10 @@ async function saveProject(){
 
   try {
     if(id){
-      await sb.from('projects').update({name,priority,completion_num:comp,completion:String(comp),status}).eq('id',id);
+      await sb.from('projects').update({name,priority,completion_num:comp,completion:String(comp),status,person,customer,industry,amount}).eq('id',id);
       await addChangeDb('update','更新项目 - '+name,'状态:'+status+', 完成度:'+Math.round(comp*100)+'%');
     }else{
-      let {data:newProj}=await sb.from('projects').insert({name,priority,completion_num:comp,completion:String(comp),status}).select('id').single();
+      let {data:newProj}=await sb.from('projects').insert({name,priority,completion_num:comp,completion:String(comp),status,person,customer,industry,amount}).select('id').single();
       await addChangeDb('create','新增项目 - '+name,'优先级:'+priority);
       // Auto-add client
       if(customer){
@@ -2423,48 +2424,12 @@ async function saveProject(){
 
 // Log Modal
 function openLogModal(pid){
-  document.getElementById('fLogId').value='';
   document.getElementById('fLogPid').value=pid;
   document.getElementById('fLogContent').value='';
   document.getElementById('fLogDate').value=new Date().toISOString().slice(0,10);
-  document.getElementById('fLogPerson').value='';
-  document.getElementById('mLogTitle').textContent='添加跟进记录';
-  document.getElementById('btnSaveLog').textContent='保存';
-  document.getElementById('btnSaveLog').onclick=saveLog;
+  document.getElementById('fLogPerson').value=S.defaultPerson||'';
   updatePersonDatalist();
   document.getElementById('mLog').classList.add('active');
-}
-
-function openEditLogModal(lid,dateSort,note,person){
-  let dbId=lid.replace('log_','');
-  document.getElementById('fLogId').value=dbId;
-  document.getElementById('fLogPid').value='';
-  document.getElementById('fLogContent').value=note||'';
-  document.getElementById('fLogDate').value=dateSort;
-  document.getElementById('fLogPerson').value=person||'';
-  document.getElementById('mLogTitle').textContent='编辑跟进记录';
-  document.getElementById('btnSaveLog').textContent='更新';
-  document.getElementById('btnSaveLog').onclick=saveEditLog;
-  updatePersonDatalist();
-  document.getElementById('mLog').classList.add('active');
-}
-
-async function saveEditLog(){
-  let content=document.getElementById('fLogContent').value.trim(); if(!content){ showToast('请输入跟进内容'); return; }
-  let dbId=parseInt(document.getElementById('fLogId').value);
-  let dateVal=document.getElementById('fLogDate').value;
-  let person=document.getElementById('fLogPerson').value.trim();
-  let d=new Date(dateVal), ds=(d.getMonth()+1)+'.'+d.getDate(), dsort=dateVal;
-  try {
-    await sb.from('logs').update({date:ds,note:content,date_sort:dsort,person}).eq('id',dbId);
-    if(person) S.defaultPerson=person;
-    await refreshAll();
-    closeModal('mLog');
-    // Find the project for this log and reopen panel
-    let proj=S.projects.find(p=>p.logs.some(l=>l.id==='log_'+dbId));
-    if(proj && document.getElementById('projPanel').classList.contains('active')) openProjPanel(proj.id);
-    showToast('已更新 ✓');
-  }catch(e){console.error(e);showToast('更新失败');}
 }
 
 async function saveLog(){
@@ -2874,7 +2839,7 @@ async function importData(e){
       await sb.from('clients').delete().neq('id',0);
       // Import projects
       for(let p of (data.projects||[])){
-        await sb.from('projects').insert({id:p.id,name:p.name,priority:p.priority||'中',completion:p.completion||'0',completion_num:p.completionNum||0,status:p.status||'进行中'});
+        await sb.from('projects').insert({id:p.id,name:p.name,priority:p.priority||'中',completion:p.completion||'0',completion_num:p.completionNum||0,status:p.status||'进行中',person:p.person||'',customer:p.customer||'',industry:p.industry||'',amount:p.amount||0});
         for(let l of (p.logs||[])){
           await sb.from('logs').insert({project_id:p.id,date:l.date||'',note:l.note||'',date_sort:l.dateSort||'',person:l.person||''});
         }
