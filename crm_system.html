@@ -2433,22 +2433,24 @@ async function saveProject(){
   try {
     let newProjId=id;
     if(id){
-      // Try full update first, fall back to basic fields
-      try{
-        await sb.from('projects').update({...basicFields,...extFields}).eq('id',id);
-      }catch(e2){
-        console.log('[saveProject] Extended fields not in DB, using basic only');
-        await sb.from('projects').update(basicFields).eq('id',id);
+      // 更新已有项目：先尝试全字段，失败则只用基础字段
+      let {error: updErr} = await sb.from('projects').update({...basicFields,...extFields}).eq('id',id);
+      if(updErr){
+        console.log('[saveProject] 全字段更新失败: ' + updErr.message + ', 回退基础字段');
+        let {error: updErr2} = await sb.from('projects').update(basicFields).eq('id',id);
+        if(updErr2) throw new Error('更新失败: ' + updErr2.message);
       }
       await addChangeDb('update','更新项目 - '+name,'状态:'+status+', 完成度:'+Math.round(comp*100)+'%');
     }else{
-      let newProj;
-      try{
-        ({data:newProj}=await sb.from('projects').insert({...basicFields,...extFields}).select('id').single());
-      }catch(e2){
-        console.log('[saveProject] Extended fields not in DB, using basic only');
-        ({data:newProj}=await sb.from('projects').insert(basicFields).select('id').single());
+      // 新增项目：先尝试全字段插入
+      let {data: newProj, error: insErr} = await sb.from('projects').insert({...basicFields,...extFields}).select('id').single();
+      if(insErr){
+        console.log('[saveProject] 全字段插入失败: ' + insErr.message + ', 回退基础字段');
+        let {data: newProj2, error: insErr2} = await sb.from('projects').insert(basicFields).select('id').single();
+        if(insErr2) throw new Error('新增失败: ' + insErr2.message);
+        newProj = newProj2;
       }
+      if(!newProj) throw new Error('新增项目后未获取到ID');
       newProjId=newProj.id;
       // Save extended fields with the real ID
       localProj=JSON.parse(localStorage.getItem('crm_proj_ext')||'{}');
@@ -2458,10 +2460,12 @@ async function saveProject(){
       await addChangeDb('create','新增项目 - '+name,'优先级:'+priority);
       // Auto-add client
       if(customer){
-        let {data:existing}=await sb.from('clients').select('*').eq('name',customer);
-        if(!existing||existing.length===0){
-          await sb.from('clients').insert({name:customer,industry,status:'活跃',proj_ids:JSON.stringify([newProjId])});
-        }
+        try {
+          let {data:existing}=await sb.from('clients').select('*').eq('name',customer);
+          if(!existing||existing.length===0){
+            await sb.from('clients').insert({name:customer,industry,status:'活跃',proj_ids:JSON.stringify([newProjId])});
+          }
+        } catch(ce){ console.log('[saveProject] 自动添加客户失败:', ce.message); }
       }
     }
     await refreshAll();
