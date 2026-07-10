@@ -1707,12 +1707,14 @@ async function seedToSupabase(){
       industry: p.industry||'',
       amount: p.amount||0
     };
-    let {data:proj};
+    let proj;
     try{
-      ({data:proj} = await sb.from('projects').insert({...basicFields,...extFields}).select('id').single());
+      let r = await sb.from('projects').insert({...basicFields,...extFields}).select('id').single();
+      proj = r.data;
     }catch(e){
       console.log('[seed] Extended fields not in DB, using basic only');
-      ({data:proj} = await sb.from('projects').insert(basicFields).select('id').single());
+      let r = await sb.from('projects').insert(basicFields).select('id').single();
+      proj = r.data;
     }
 
     if(p.logs){
