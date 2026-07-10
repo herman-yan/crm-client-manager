@@ -2810,7 +2810,7 @@ async function dingtalkRequest({webhook, secret, message}) {
 
   // 方案2：通过 CORS 代理 + 浏览器签名（GitHub Pages 用户靠这个通道）
   try {
-    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(signedUrl);
+    const proxyUrl = 'https://proxy.cors.sh/' + signedUrl;
     const r = await fetch(proxyUrl, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
