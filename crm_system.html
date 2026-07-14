@@ -2284,7 +2284,14 @@ async function quickAddLog(pid){
   let now=new Date(), ds=(now.getMonth()+1)+'.'+now.getDate(), dsort=now.toISOString().slice(0,10);
   let note=inp.value.trim();
   try {
-    await sb.from('logs').insert({project_id:pid,date:ds,note:note,date_sort:dsort,person});
+    let {error:insErr}=await sb.from('logs').insert({project_id:pid,date:ds,note:note,date_sort:dsort,person});
+    if(insErr){
+      console.error('[quickAddLog] 插入失败:', insErr);
+      // Try without person field (column might not exist)
+      let {error:insErr2}=await sb.from('logs').insert({project_id:pid,date:ds,note:note,date_sort:dsort});
+      if(insErr2){ showToast('保存失败: '+insErr2.message); return; }
+      console.log('[quickAddLog] 已回退（person列可能不存在）');
+    }
     await addChangeDb('log','跟进记录 - '+p.name,note.slice(0,50));
     await refreshAll();
     inp.value=''; openProjPanel(pid); showToast('已添加 ✓');
@@ -2295,7 +2302,7 @@ async function quickAddLog(pid){
       `日期：${ds}\n\n`+
       `> ${note.slice(0,150)}${note.length>150?'...':''}`
     );
-  }catch(e){console.error(e);showToast('保存失败');}
+  }catch(e){console.error('[quickAddLog] 异常:',e);showToast('保存失败');}
 }
 
 // ===== CLIENTS =====
@@ -2865,7 +2872,14 @@ async function saveLog(){
   let person=document.getElementById('fLogPerson').value.trim();
   let d=new Date(dateVal), ds=(d.getMonth()+1)+'.'+d.getDate(), dsort=dateVal;
   try {
-    await sb.from('logs').insert({project_id:pid,date:ds,note:content,date_sort:dsort,person});
+    let {error:insErr}=await sb.from('logs').insert({project_id:pid,date:ds,note:content,date_sort:dsort,person});
+    if(insErr){
+      console.error('[saveLog] 插入失败:', insErr);
+      // Try without person field
+      let {error:insErr2}=await sb.from('logs').insert({project_id:pid,date:ds,note:content,date_sort:dsort});
+      if(insErr2){ showToast('保存失败: '+insErr2.message); return; }
+      console.log('[saveLog] 已回退（person列可能不存在）');
+    }
     if(person) S.defaultPerson=person;
     await addChangeDb('log','跟进记录 - '+(S.projects.find(x=>x.id===pid)?.name||''),content.slice(0,50));
     await refreshAll();
@@ -2880,7 +2894,7 @@ async function saveLog(){
       `日期：${ds}\n\n`+
       `> ${content.slice(0,150)}${content.length>150?'...':''}`
     );
-  }catch(e){console.error(e);showToast('保存失败');}
+  }catch(e){console.error('[saveLog] 异常:',e);showToast('保存失败');}
 }
 
 async function deleteProject(id){
