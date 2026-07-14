@@ -3022,7 +3022,14 @@ async function saveContact(){
 
 // ===== CHANGES =====
 async function addChangeDb(type,title,desc){
-  try { await sb.from('changes').insert({action:type,target_type:'project',target_name:title,detail:desc}); } catch(e){}
+  // 立即写入内存，确保 UI 实时更新（不依赖 refreshAll 的 DB 拉取）
+  if(!S.changes) S.changes = [];
+  S.changes.unshift({type,title,desc,time:new Date().toISOString()});
+  // 写入 Supabase
+  try {
+    let {error} = await sb.from('changes').insert({action:type,target_type:'project',target_name:title,detail:desc});
+    if(error) console.log('[addChangeDb] Supabase 写入变更记录失败:', error.message);
+  } catch(e){ console.log('[addChangeDb] 网络异常:', e.message); }
 }
 function addChange(type,title,desc){ addChangeDb(type,title,desc); }
 
