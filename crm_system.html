@@ -2303,6 +2303,29 @@ function setClientFilter(f){ S.clientFilter=f;
   document.querySelectorAll('#clientFilters .f-chip').forEach(c=>c.classList.remove('active'));
   event.target.classList.add('active'); renderClients(); }
 
+function classifyCustomer(name, industry, business, direction){
+  // 根据客户名称、行业、业务、合作方向自动分类
+  const known = ['政府合作方','业务合作方','场地合作方','潜在客户','待分类'];
+  if(industry && known.includes(industry)) return industry;
+
+  const text = ((industry||'') + ' ' + (name||'') + ' ' + (business||'') + ' ' + (direction||'')).toLowerCase();
+
+  // 政府合作方关键词
+  if(/\b(政府|公共|政务|机关|事业单位|国企|国资|市政|城管|公安|消防|法院|检察院|税务|财政|发改|经信|科技局|文旅|教育|卫健|民政|人社|自然资源|生态环境|住建|交通|水利|农业|商务|应急|审计|市监|统计|医保|信访)\b/.test(text)) return '政府合作方';
+
+  // 场地合作方关键词
+  if(/\b(场地|场馆|展厅|体验馆|体验中心|展馆|博物馆|会展|会议中心|剧场|体育馆|演播)\b/.test(text)) return '场地合作方';
+
+  // 潜在客户关键词（有方向但无明确行业或处于早期阶段）
+  if(/\b(潜在|意向|线索|初步|接洽|待定|探索|试点|考察)\b/.test(text)) return '潜在客户';
+
+  // 业务合作方：有明确行业但非上述类别
+  if(industry && industry !== '待分类') return '业务合作方';
+  if(business || direction) return '业务合作方';
+
+  return '待分类';
+}
+
 function renderClients(){
   S.clientSearch = document.getElementById('clientSearch')?.value||'';
   let filtered=S.clients;
@@ -2397,6 +2420,11 @@ function renderClients(){
         });
       }
     }
+  });
+
+  // ===== 智能分类：根据名称/行业/业务/方向自动映射到五行分组 =====
+  Object.values(customerMap).forEach(c=>{
+    c.industry = classifyCustomer(c.name, c.industry, c.business, c.direction);
   });
 
   // Search filter
