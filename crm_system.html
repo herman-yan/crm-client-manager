@@ -2292,8 +2292,8 @@ async function quickAddLog(pid){
       if(insErr2){ showToast('保存失败: '+insErr2.message); return; }
       console.log('[quickAddLog] 已回退（person列可能不存在）');
     }
-    await addChangeDb('log','跟进记录 - '+p.name,note.slice(0,50));
     await refreshAll();
+    await addChangeDb('log','跟进记录 - '+p.name,note.slice(0,50));
     inp.value=''; openProjPanel(pid); showToast('已添加 ✓');
     pushToWechat('项目跟进: '+p.name,(person||'有人')+'添加了跟进记录',note.slice(0,80));
     sendDingtalk('📝 新增跟进记录',
@@ -2800,7 +2800,6 @@ async function saveProject(){
         let {error: updErr2} = await sb.from('projects').update(basicFields).eq('id',id);
         if(updErr2) throw new Error('更新失败: ' + updErr2.message);
       }
-      await addChangeDb('update','更新项目 - '+name,'状态:'+status+', 完成度:'+Math.round(comp*100)+'%');
     }else{
       // 新增项目：先尝试全字段插入
       let {data: newProj, error: insErr} = await sb.from('projects').insert({...basicFields,...extFields}).select('id').single();
@@ -2817,7 +2816,6 @@ async function saveProject(){
       delete localProj['_pending'];
       localProj[newProjId]={...extFields};
       localStorage.setItem('crm_proj_ext',JSON.stringify(localProj));
-      await addChangeDb('create','新增项目 - '+name,'优先级:'+priority);
       // Auto-add client
       if(customer){
         try {
@@ -2831,6 +2829,8 @@ async function saveProject(){
     await refreshAll();
     // Merge extended fields from localStorage into loaded projects
     mergeExtFields();
+    // 在 refreshAll 之后写变更记录，避免被覆盖
+    await addChangeDb(id?'update':'create', (id?'更新项目':'新增项目')+' - '+name, id?('状态:'+status+', 完成度:'+Math.round(comp*100)+'%'):('优先级:'+priority));
     closeModal('mProj'); renderProjCards(); showToast(id?'已更新 ✓':'已创建 ✓');
 
     // DingTalk notification for status change
@@ -2881,8 +2881,8 @@ async function saveLog(){
       console.log('[saveLog] 已回退（person列可能不存在）');
     }
     if(person) S.defaultPerson=person;
-    await addChangeDb('log','跟进记录 - '+(S.projects.find(x=>x.id===pid)?.name||''),content.slice(0,50));
     await refreshAll();
+    await addChangeDb('log','跟进记录 - '+(S.projects.find(x=>x.id===pid)?.name||''),content.slice(0,50));
     closeModal('mLog');
     if(document.getElementById('projPanel').classList.contains('active')) openProjPanel(pid);
     showToast('已添加 ✓');
