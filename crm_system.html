@@ -299,6 +299,62 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 .upload-file-name{font-size:13px;font-weight:600;color:var(--pri);margin-bottom:4px;display:flex;align-items:center;gap:6px}
 .upload-file-name .uf-remove{font-size:11px;color:var(--dan);cursor:pointer;text-decoration:underline}
 
+/* ===== CUSTOMER DATABASE (unified clients + resources) ===== */
+.cdb-group-header{display:flex;align-items:center;gap:8px;margin:20px 0 10px 0;padding-bottom:6px;border-bottom:2px solid var(--brd)}
+.cdb-group-header:first-child{margin-top:0}
+.cdb-group-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.cdb-group-name{font-size:15px;font-weight:700;color:var(--text)}
+.cdb-group-count{font-size:12px;color:var(--text2)}
+.cdb-summary{margin-bottom:14px;font-size:13px;color:var(--text2)}
+.cdb-card{background:var(--card);border:1px solid var(--brd);border-radius:var(--r);margin-bottom:10px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.cdb-card:hover{border-color:var(--pri);box-shadow:var(--sh-lg)}
+.cdb-card.expanded{border-color:var(--pri)}
+.cdb-header{display:flex;align-items:center;padding:14px 18px;cursor:pointer;gap:12px;user-select:none}
+.cdb-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;color:#fff}
+.cdb-info{flex:1;min-width:0}
+.cdb-name-row{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap}
+.cdb-name{font-size:15px;font-weight:600;color:var(--text)}
+.cdb-industry{font-size:11px;padding:2px 8px;border-radius:8px;font-weight:500;white-space:nowrap}
+.cdb-meta{font-size:12px;color:var(--text2);display:flex;gap:12px;flex-wrap:wrap}
+.cdb-expand-icon{font-size:12px;color:var(--text3);transition:transform .2s;flex-shrink:0}
+.cdb-card.expanded .cdb-expand-icon{transform:rotate(90deg)}
+.cdb-projects-panel{display:none;border-top:1px solid var(--brd)}
+.cdb-card.expanded .cdb-projects-panel{display:block}
+.cdb-project-row{display:flex;align-items:flex-start;padding:12px 18px 12px 70px;border-bottom:1px solid var(--brd);gap:12px;transition:background .15s}
+.cdb-project-row:last-child{border-bottom:none}
+.cdb-project-row:hover{background:var(--bg)}
+.cdb-proj-left{flex:0 0 auto;display:flex;flex-direction:column;gap:4px;min-width:120px}
+.cdb-proj-name{font-size:13px;font-weight:600;color:var(--pri);cursor:pointer}
+.cdb-proj-name:hover{text-decoration:underline}
+.cdb-proj-direction{font-size:11px;color:var(--text2)}
+.cdb-proj-center{flex:1;min-width:0}
+.cdb-proj-status{font-size:12px;color:var(--text);margin-bottom:4px;font-weight:500}
+.cdb-proj-latest{font-size:12px;color:var(--text2);line-height:1.5;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.cdb-proj-right{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.cdb-proj-date{font-size:11px;color:var(--pri);font-weight:600}
+.cdb-proj-priority{font-size:10px;padding:1px 6px;border-radius:6px;font-weight:600}
+.cdb-proj-priority.high{background:#dbeafe;color:var(--pri)}
+.cdb-proj-priority.lost{background:#fee2e2;color:var(--dan)}
+.cdb-proj-detail-btn{font-size:11px;color:var(--pri);cursor:pointer;padding:2px 8px;border-radius:6px;background:var(--pri-bg);border:1px solid #dbeafe;white-space:nowrap;transition:all .15s}
+.cdb-proj-detail-btn:hover{background:#dbeafe;border-color:var(--pri)}
+.cdb-contact-section{padding:10px 18px 10px 70px;border-top:1px solid var(--brd);background:var(--bg)}
+.cdb-contact-title{font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:600}
+.cdb-contact-list{display:flex;flex-wrap:wrap;gap:8px}
+.cdb-contact-item{font-size:12px;color:var(--text);background:var(--card);padding:4px 10px;border-radius:6px;border:1px solid var(--brd);display:inline-flex;align-items:center;gap:6px}
+.cdb-contact-item .ci-name{font-weight:600}
+.cdb-contact-item .ci-phone{color:var(--text2)}
+.cdb-contact-item .ci-role{color:var(--pri);font-size:11px}
+.cdb-actions{padding:8px 18px 10px 70px;display:flex;gap:8px;border-top:1px solid var(--brd)}
+.cdb-actions .btn{font-size:11px;padding:4px 12px}
+.cdb-timeline-section{padding:8px 18px 8px 70px;border-top:1px solid var(--brd);background:#f8fafc}
+.cdb-timeline-title{font-size:11px;color:var(--text2);margin-bottom:6px;font-weight:600}
+.cdb-timeline-entry{padding:6px 0;border-bottom:1px solid #f1f5f9}
+.cdb-timeline-entry:last-child{border-bottom:none}
+.cdb-timeline-entry-header{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.cdb-timeline-entry-date{font-size:11px;color:var(--pri);font-weight:600}
+.cdb-timeline-entry-updater{font-size:11px;color:var(--text2)}
+.cdb-timeline-entry-content{font-size:12px;color:var(--text2);line-height:1.5;white-space:pre-line;word-break:break-all}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head><body>
@@ -319,7 +375,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
     <div class="logo">🔷 CRM 系统</div>
     <div class="si active" onclick="nav('dashboard')"><span style="font-size:18px">📊</span> 工作台</div>
     <div class="si" onclick="nav('projects')"><span style="font-size:18px">📋</span> 项目管理</div>
-    <div class="si" onclick="nav('clients')"><span style="font-size:18px">👥</span> 客户管理</div>
+    <div class="si" onclick="nav('clients')"><span style="font-size:18px">👥</span> 客户资料库</div>
     <div class="si" onclick="nav('resources')"><span style="font-size:18px">🏢</span> 资源库</div>
     <div style="margin-top:auto;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)">
       <div class="si" onclick="openSettings()"><span style="font-size:18px">⚙️</span> 系统设置</div>
@@ -373,10 +429,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
       </div>
     </section>
 
-    <!-- ===== CLIENTS ===== -->
+    <!-- ===== CLIENTS (Customer Database) ===== -->
     <section class="page" id="pg-clients">
-      <div class="sttl">客户管理 <span class="stc" id="clientCount"></span><button class="btn btn-pri btn-sm" onclick="openUploadModal()" style="margin-left:8px">📤 导入文件</button></div>
-      <div class="search"><span class="si">🔍</span><input id="clientSearch" placeholder="搜索客户名称、行业..." oninput="renderClients()"></div>
+      <div class="sttl">客户资料库 <span class="stc" id="clientCount"></span><button class="btn btn-pri btn-sm" onclick="openUploadModal()" style="margin-left:8px">📤 导入文件</button></div>
+      <div class="search"><span class="si">🔍</span><input id="clientSearch" placeholder="搜索客户名称、类型、合作方向..." oninput="renderClients()"></div>
       <div class="filters" id="clientFilters">
         <button class="f-chip active" onclick="setClientFilter('all')">全部</button>
         <button class="f-chip" onclick="setClientFilter('active')">活跃</button>
@@ -2252,30 +2308,292 @@ function renderClients(){
   let filtered=S.clients;
   if(S.clientFilter==='active') filtered=filtered.filter(c=>c.status==='活跃');
   if(S.clientFilter==='lost') filtered=filtered.filter(c=>c.status==='已流失');
-  if(S.clientSearch) filtered=filtered.filter(c=>c.name.toLowerCase().includes(S.clientSearch.toLowerCase()));
 
-  document.getElementById('clientCount').textContent = `${filtered.length}个客户`;
-  let list=document.getElementById('clientList');
-  if(!filtered.length){ list.innerHTML='<div class="empty"><div class="ei">👥</div><div class="et">没有匹配的客户<br><br><button class="btn btn-pri btn-sm" onclick="openClientModal()">+ 添加客户</button></div></div>'; return; }
+  // ===== Build unified customer database (merge clients + resources) =====
+  const customerMap = {};
+  const avatarColors = ['#2563eb','#059669','#ea580c','#7c3aed','#dc2626','#d97706','#0891b2','#4f46e5'];
 
-  list.innerHTML = filtered.map(c=>{
-    let projs=S.projects.filter(p=>c.projIds.includes(p.id));
-    let activeProjs=projs.filter(p=>p.status!=='已流失').length;
-    return `<div class="cl-card" onclick="openClientPanel('${c.id}')">
-      <div class="cl-top"><div class="cl-name">${esc(c.name)}</div>${c.industry?`<span class="cl-industry">${esc(c.industry)}</span>`:''}</div>
-      <div class="cl-info">
-        ${c.company?`<span>🏢 ${esc(c.company)}</span>`:''}
-        ${c.contact?`<span>👤 ${esc(c.contact)}${c.position?' · '+esc(c.position):''}</span>`:''}
-        ${c.phone?`<span>📱 ${esc(c.phone)}</span>`:''}
-        ${c.wechat?`<span>💬 ${esc(c.wechat)}</span>`:''}
-        ${c.address?`<span>📍 ${esc(c.address)}</span>`:''}
+  function ensureCustomer(name, industry){
+    if(!name) return null;
+    if(!customerMap[name]) customerMap[name] = {name, industry: industry||'待分类', contacts:[], projects:[], sources:[], status:'活跃', address:'', phone:'', website:'', business:'', direction:'', note:'', fullName:'', id:null, type:'client'};
+    return customerMap[name];
+  }
+
+  // Merge from clients
+  filtered.forEach(c=>{
+    let cust = ensureCustomer(c.name || c.company || c.id, c.industry);
+    if(!cust) return;
+    cust.id = c.id;
+    cust.type = 'client';
+    cust.status = c.status || '活跃';
+    if(c.company && !cust.fullName) cust.fullName = c.company;
+    if(c.address) cust.address = c.address;
+    if(c.phone) cust.phone = c.phone;
+    if(c.contact){
+      if(!cust.contacts.find(x=>x.name===c.contact)){
+        cust.contacts.push({name:c.contact, role:c.position||'', phone:c.phone||'', wechat:c.wechat||''});
+      }
+    }
+    if(c.note) cust.note = c.note;
+    // Link projects
+    let pids = [];
+    try { pids = typeof c.projIds==='string' ? JSON.parse(c.projIds) : (c.projIds||[]); } catch(e){ pids = c.projIds||[]; }
+    pids.forEach(pid=>{
+      let p = S.projects.find(x=>x.id===pid);
+      if(p && !cust.projects.find(x=>x.id===p.id)){
+        cust.projects.push({
+          id:p.id, name:p.name, status:p.status||'', priority:p.priority||'',
+          completion:p.completionNum||0, logs:p.logs||[],
+          latestUpdate:p.logs&&p.logs[0]?p.logs[0].date:'', latestNote:p.logs&&p.logs[0]?p.logs[0].note:''
+        });
+      }
+    });
+    cust.sources.push('client');
+  });
+
+  // Merge from resources
+  S.resources.forEach(r=>{
+    let custName = r.company || r.fullName || r.id;
+    let cust = ensureCustomer(custName, r.industry);
+    if(!cust) return;
+    cust.id = cust.id || r.id;
+    cust.type = cust.type==='client' ? 'both' : 'resource';
+    if(r.fullName && !cust.fullName) cust.fullName = r.fullName;
+    if(r.address && !cust.address) cust.address = r.address;
+    if(r.phone && !cust.phone) cust.phone = r.phone;
+    if(r.website) cust.website = r.website;
+    if(r.business) cust.business = r.business;
+    if(r.direction) cust.direction = r.direction;
+    cust.status = r.status || cust.status;
+    if(r.contacts && r.contacts.length){
+      r.contacts.forEach(ct=>{
+        if(!cust.contacts.find(x=>x.name===ct.name)){
+          cust.contacts.push({name:ct.name||'', role:ct.role||'', phone:ct.mobile||ct.phone||'', wechat:ct.wechat||'', email:ct.email||''});
+        }
+      });
+    }
+    // Try to link projects by customer name match
+    S.projects.forEach(p=>{
+      if(p.customer && (p.customer===r.company || p.customer===r.fullName) && !cust.projects.find(x=>x.id===p.id)){
+        cust.projects.push({
+          id:p.id, name:p.name, status:p.status||'', priority:p.priority||'',
+          completion:p.completionNum||0, logs:p.logs||[],
+          latestUpdate:p.logs&&p.logs[0]?p.logs[0].date:'', latestNote:p.logs&&p.logs[0]?p.logs[0].note:''
+        });
+      }
+    });
+    cust.sources.push('resource');
+  });
+
+  // Also check projects for customer field
+  S.projects.forEach(p=>{
+    if(p.customer){
+      let cust = ensureCustomer(p.customer, p.industry);
+      if(cust && !cust.projects.find(x=>x.id===p.id)){
+        cust.projects.push({
+          id:p.id, name:p.name, status:p.status||'', priority:p.priority||'',
+          completion:p.completionNum||0, logs:p.logs||[],
+          latestUpdate:p.logs&&p.logs[0]?p.logs[0].date:'', latestNote:p.logs&&p.logs[0]?p.logs[0].note:''
+        });
+      }
+    }
+  });
+
+  // Search filter
+  let allCustomers = Object.values(customerMap);
+  if(S.clientSearch){
+    let q = S.clientSearch.toLowerCase();
+    allCustomers = allCustomers.filter(c=>{
+      let searchText = (c.name+' '+c.industry+' '+c.fullName+' '+c.business+' '+c.direction+' '+c.projects.map(p=>p.name).join(' ')).toLowerCase();
+      return searchText.includes(q);
+    });
+  }
+
+  // ===== Group by industry =====
+  const groupOrder = ['政府合作方','业务合作方','场地合作方','潜在客户','待分类'];
+  const groups = {};
+  groupOrder.forEach(g=>{groups[g]=[];});
+  allCustomers.forEach(c=>{
+    let g = groups[c.industry] || groups['待分类'];
+    if(!g) { groups['待分类'] = groups['待分类']||[]; g = groups['待分类']; }
+    g.push(c);
+  });
+  // Sort within groups by project count desc, then name
+  Object.values(groups).forEach(g=>{
+    g.sort((a,b)=>{
+      if(b.projects.length!==a.projects.length) return b.projects.length-a.projects.length;
+      return a.name.localeCompare(b.name,'zh');
+    });
+  });
+
+  const groupIcons = {
+    '政府合作方':{bg:'#ede9fe',color:'#7c3aed',icon:'🏛'},
+    '业务合作方':{bg:'#dbeafe',color:'#2563eb',icon:'🤝'},
+    '场地合作方':{bg:'#d1fae5',color:'#059669',icon:'📍'},
+    '潜在客户':{bg:'#fed7aa',color:'#ea580c',icon:'🔍'},
+    '待分类':{bg:'#f1f5f9',color:'#64748b',icon:'📁'}
+  };
+
+  document.getElementById('clientCount').textContent = `${allCustomers.length}个客户`;
+  let list = document.getElementById('clientList');
+  if(!allCustomers.length){ list.innerHTML='<div class="empty"><div class="ei">👥</div><div class="et">没有匹配的客户<br><br><button class="btn btn-pri btn-sm" onclick="openClientModal()">+ 添加客户</button></div></div>'; return; }
+
+  let globalIdx = 0;
+  let html = `<div class="cdb-summary">共 ${allCustomers.length} 个客户 · 点击展开查看各项目进展和联系人</div>`;
+
+  for(const [groupName, members] of Object.entries(groups)){
+    if(members.length===0) continue;
+    let gi = groupIcons[groupName] || groupIcons['待分类'];
+
+    html += `
+      <div class="cdb-group-header">
+        <div class="cdb-group-icon" style="background:${gi.bg};color:${gi.color}">${gi.icon}</div>
+        <span class="cdb-group-name">${groupName}</span>
+        <span class="cdb-group-count">(${members.length})</span>
       </div>
-      <div class="cl-foot">
-        <div class="cl-projects">📋 ${projs.length}个关联项目${activeProjs>0?` (${activeProjs}活跃)`:' (已结束)'}</div>
-        <span class="pc-status ${c.status==='活跃'?'st-进行中':'st-已流失'}">${c.status}</span>
-      </div>
-    </div>`;
-  }).join('');
+    `;
+
+    html += members.map(c=>{
+      let colorIdx = globalIdx % avatarColors.length;
+      globalIdx++;
+      let initial = c.name.charAt(0);
+      let industryColors = {
+        '政府合作方':'background:#ede9fe;color:#7c3aed',
+        '业务合作方':'background:#dbeafe;color:#2563eb',
+        '场地合作方':'background:#d1fae5;color:#059669',
+        '潜在客户':'background:#fed7aa;color:#ea580c',
+        '待分类':'background:#f1f5f9;color:#64748b'
+      };
+      let industryStyle = industryColors[c.industry] || 'background:#f1f5f9;color:#64748b';
+      let projectCount = c.projects.length;
+      let hasActive = c.projects.some(p=>p.status!=='已流失'&&p.status!=='战败');
+      let todayStr = new Date().toISOString().substring(0,10);
+
+      // Project rows
+      let projectRowsHtml = c.projects.map(p=>{
+        let latestContent = p.latestNote ? p.latestNote.split('\n')[0] : '暂无进展记录';
+        let latestDate = p.latestUpdate || '';
+        let latestUpdater = p.logs&&p.logs[0]&&p.logs[0].person ? ' · '+p.logs[0].person : '';
+        let priorityClass = p.priority==='战败' ? 'lost' : 'high';
+        let detailBtn = p.id ? `<span class="cdb-proj-detail-btn" onclick="event.stopPropagation();nav('projects');setTimeout(()=>openProjPanel(${p.id}),100)">📄 查看详情</span>` : '';
+
+        // Build timeline (show last 3 entries)
+        let timelineHtml = '';
+        if(p.logs && p.logs.length > 1){
+          let entries = p.logs.slice(1, 4).map(entry=>{
+            let entryContent = entry.note ? entry.note.split('\n')[0] : '';
+            let entryDate = entry.date || '';
+            let entryUpdater = entry.person || '';
+            return `<div class="cdb-timeline-entry">
+              <div class="cdb-timeline-entry-header">
+                <span class="cdb-timeline-entry-date">${entryDate}</span>
+                ${entryUpdater ? `<span class="cdb-timeline-entry-updater">${entryUpdater}</span>` : ''}
+              </div>
+              <div class="cdb-timeline-entry-content">${esc(entryContent)}</div>
+            </div>`;
+          }).join('');
+          timelineHtml = `<div class="cdb-timeline-section">
+            <div class="cdb-timeline-title">历史进展</div>
+            ${entries}
+          </div>`;
+        }
+
+        return `<div style="border-bottom:1px solid var(--brd)">
+          <div class="cdb-project-row">
+            <div class="cdb-proj-left">
+              <span class="cdb-proj-name" onclick="event.stopPropagation();nav('projects');setTimeout(()=>openProjPanel(${p.id}),100)">${esc(p.name)}</span>
+              ${c.direction ? `<span class="cdb-proj-direction">${esc(c.direction.slice(0,30))}</span>` : ''}
+            </div>
+            <div class="cdb-proj-center">
+              <div class="cdb-proj-status">${p.status||'待跟进'} · 完成度 ${Math.round((p.completion||0)*100)}%</div>
+              <div class="cdb-proj-latest">${esc(latestContent)}</div>
+            </div>
+            <div class="cdb-proj-right">
+              ${latestDate ? `<span class="cdb-proj-date">${latestDate}${latestUpdater}</span>` : ''}
+              ${p.priority ? `<span class="cdb-proj-priority ${priorityClass}">${p.priority}</span>` : ''}
+              ${p.logs&&p.logs.length ? `<span style="font-size:10px;color:var(--text3)">${p.logs.length}次更新</span>` : ''}
+              ${detailBtn}
+            </div>
+          </div>
+          ${timelineHtml}
+        </div>`;
+      }).join('');
+
+      if(!projectRowsHtml) projectRowsHtml = '<div style="padding:12px 18px 12px 70px;font-size:12px;color:var(--text3)">暂无关联项目</div>';
+
+      // Contact section
+      let contactHtml = '';
+      if(c.contacts.length > 0){
+        let contactItems = c.contacts.map(ct=>{
+          let parts = [];
+          if(ct.name) parts.push(`<span class="ci-name">${esc(ct.name)}</span>`);
+          if(ct.phone) parts.push(`<span class="ci-phone">${esc(ct.phone)}</span>`);
+          if(ct.role) parts.push(`<span class="ci-role">${esc(ct.role)}</span>`);
+          return parts.length>0 ? `<span class="cdb-contact-item">${parts.join(' ')}</span>` : '';
+        }).filter(Boolean).join('');
+        contactHtml = `<div class="cdb-contact-section">
+          <div class="cdb-contact-title">👥 联系人 (${c.contacts.length})</div>
+          <div class="cdb-contact-list">${contactItems}</div>
+        </div>`;
+      }
+
+      // Extra info (address, website, business)
+      let extraInfo = '';
+      let extraParts = [];
+      if(c.fullName && c.fullName!==c.name) extraParts.push(`全称：${esc(c.fullName)}`);
+      if(c.address) extraParts.push(`📍 ${esc(c.address)}`);
+      if(c.website) extraParts.push(`🌐 <a href="${esc(c.website)}" target="_blank" style="color:var(--pri)">${esc(c.website)}</a>`);
+      if(c.business) extraParts.push(`🔧 ${esc(c.business.slice(0,60))}${c.business.length>60?'...':''}`);
+      if(extraParts.length){
+        extraInfo = `<div style="padding:8px 18px 8px 70px;border-top:1px solid var(--brd);font-size:11px;color:var(--text2);line-height:1.8">${extraParts.join(' · ')}</div>`;
+      }
+
+      // Action buttons
+      let actionsHtml = '';
+      if(c.type==='client'||c.type==='both'){
+        actionsHtml = `<div class="cdb-actions">
+          <button class="btn btn-out btn-sm" onclick="event.stopPropagation();openClientPanel('${c.id}')">📋 详情</button>
+          <button class="btn btn-out btn-sm" onclick="event.stopPropagation();openClientModal('${c.id}')">✏️ 编辑</button>
+        </div>`;
+      } else if(c.type==='resource'){
+        actionsHtml = `<div class="cdb-actions">
+          <button class="btn btn-out btn-sm" onclick="event.stopPropagation();nav('resources');setTimeout(()=>openResPanel('${c.id}'),100)">📋 详情</button>
+          <button class="btn btn-out btn-sm" onclick="event.stopPropagation();nav('resources');setTimeout(()=>openResModal('${c.id}'),100)">✏️ 编辑</button>
+        </div>`;
+      }
+
+      return `<div class="cdb-card" data-name="${esc(c.name)}" data-search="${esc((c.name+' '+c.industry+' '+c.fullName+' '+c.business+' '+c.direction+' '+c.projects.map(p=>p.name).join(' ')).toLowerCase())}">
+        <div class="cdb-header" onclick="toggleCdbCard(this)">
+          <div class="cdb-avatar" style="background:${avatarColors[colorIdx]}">${esc(initial)}</div>
+          <div class="cdb-info">
+            <div class="cdb-name-row">
+              <span class="cdb-name">${esc(c.name)}</span>
+              <span class="cdb-industry" style="${industryStyle}">${c.industry}</span>
+            </div>
+            <div class="cdb-meta">
+              <span>📋 ${projectCount}个项目</span>
+              ${hasActive?'<span style="color:var(--suc)">● 活跃</span>':''}
+              ${c.contacts.length?'<span>👥 '+c.contacts.length+'联系人</span>':''}
+            </div>
+          </div>
+          <span class="cdb-expand-icon">▶</span>
+        </div>
+        <div class="cdb-projects-panel">
+          ${projectRowsHtml}
+          ${extraInfo}
+          ${contactHtml}
+          ${actionsHtml}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  list.innerHTML = html;
+}
+
+function toggleCdbCard(headerEl){
+  const card = headerEl.closest('.cdb-card');
+  card.classList.toggle('expanded');
 }
 
 function openClientPanel(cid){
