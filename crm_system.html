@@ -287,7 +287,91 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 .dd-menu .dd-item:hover{background:var(--pri-bg)}
 .dd-menu .dd-item.active{color:var(--pri);font-weight:600}
 
-/* ===== UPLOAD PREVIEW ===== */
+/* ============================================================
+   🎨 GLOBAL POLISH — 视觉打磨 + 操作易用性
+   ============================================================ */
+
+/* Section title with accent bar */
+.sttl{position:relative;padding-left:13px}
+.sttl::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:4px;height:18px;background:var(--pri);border-radius:3px}
+
+/* Card micro-interaction */
+.card{transition:box-shadow .2s ease, transform .2s ease}
+.card:hover{box-shadow:var(--sh-lg)}
+
+/* Stat card with icon */
+.stat{display:flex;align-items:center;gap:12px}
+.stat-ico{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;background:var(--pri-bg);box-shadow:inset 0 0 0 1px rgba(37,99,235,.08)}
+.stat.g .stat-ico{background:var(--suc-bg)}
+.stat.a .stat-ico{background:var(--war-bg)}
+.stat.r .stat-ico{background:var(--dan-bg)}
+.stat-body{flex:1;min-width:0}
+.stat .sv{font-size:25px;font-weight:800;line-height:1.1}
+.stat .sl{font-size:var(--fs-xs);color:var(--text2);margin-top:2px}
+
+/* FAB — gentle hover lift */
+.fab{transition:transform .15s ease, box-shadow .2s ease}
+.fab:hover{transform:scale(1.06);box-shadow:0 6px 20px rgba(37,99,235,.45)}
+
+/* Toolbar (search + action) */
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.toolbar .search{margin-bottom:0;flex:1;min-width:0}
+.toolbar .btn{width:auto;flex-shrink:0;white-space:nowrap}
+
+/* Friendlier empty state */
+.empty{padding:40px 16px}
+.empty .ei{font-size:48px;opacity:.3;margin-bottom:10px}
+.empty .et{font-size:var(--fs-sm);color:var(--text2);line-height:1.7}
+.empty .btn{margin-top:14px;width:auto;display:inline-block;padding:8px 20px}
+
+/* ============================================================
+   📊 CUSTOMER LIBRARY — 同公司多项目状态一眼可见
+   ============================================================ */
+
+/* 总览条：项目状态分布 */
+.cdb-overview{background:linear-gradient(180deg,#fff, #fbfdff);border:1px solid var(--brd);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:14px;box-shadow:var(--sh)}
+.cdb-ov-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.cdb-ov-title{font-size:12px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:6px;letter-spacing:.3px}
+.cdb-ov-count{font-size:12px;color:var(--text2)}
+.cdb-ov-count b{color:var(--pri);font-size:16px;font-weight:800;margin:0 2px}
+.cdb-ov-bar{display:flex;height:9px;border-radius:5px;overflow:hidden;background:var(--brd);margin-bottom:10px}
+.cdb-ov-seg{height:100%;transition:width .45s ease}
+.cdb-ov-legend{display:flex;flex-wrap:wrap;gap:6px 14px}
+.cdb-ov-leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.cdb-ov-leg i{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.cdb-ov-leg b{color:var(--text);font-weight:700}
+
+/* 折叠态：项目状态条（每个项目一个彩色标签） */
+.cdb-status-strip{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.cdb-status-pill{font-size:10px;font-weight:600;padding:2px 9px;border-radius:11px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;line-height:1.5}
+.cdb-status-pill::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.cdb-status-empty{background:var(--bg);color:var(--text3)}
+
+/* 展开态：单项目状态卡 */
+.cdb-proj{margin:10px 14px;background:var(--card);border:1px solid var(--brd);border-radius:12px;padding:12px 13px;transition:box-shadow .15s ease, border-color .15s ease}
+.cdb-proj:hover{box-shadow:var(--sh-lg);border-color:var(--pri-l)}
+.cdb-proj-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}
+.cdb-proj-title-wrap{flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cdb-proj-name{font-size:14px;font-weight:700;color:var(--text);cursor:pointer}
+.cdb-proj-name:hover{color:var(--pri);text-decoration:underline}
+.cdb-proj-badge{font-size:11px;font-weight:600;padding:2px 10px;border-radius:11px;white-space:nowrap;flex-shrink:0}
+.cdb-proj-pct{font-size:15px;font-weight:800;flex-shrink:0;font-variant-numeric:tabular-nums}
+.cdb-proj-bar{height:6px;background:var(--brd);border-radius:3px;overflow:hidden;margin-bottom:9px}
+.cdb-proj-bar-f{height:100%;border-radius:3px;transition:width .45s ease}
+.cdb-proj-foot{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.cdb-proj-latest{font-size:12px;color:var(--text2);line-height:1.55;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;flex:1;min-width:0}
+.cdb-proj-latest .lbl{color:var(--text3);font-weight:600}
+.cdb-proj-meta{font-size:11px;color:var(--text3);text-align:right;white-space:nowrap;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.cdb-proj-tag{font-size:10px;padding:1px 7px;border-radius:7px;font-weight:600}
+.cdb-proj-detail{font-size:11px;color:var(--pri);cursor:pointer;padding:3px 10px;border-radius:7px;background:var(--pri-bg);border:1px solid #dbeafe;white-space:nowrap;transition:all .15s}
+.cdb-proj-detail:hover{background:#dbeafe;border-color:var(--pri)}
+
+/* 展开态：客户卡片头部加状态条后增加内边距 */
+.cdb-card.expanded .cdb-projects-panel{padding-top:6px}
+
+/* ============================================================
+   UPLOAD PREVIEW
+   ============================================================ */
 .upload-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
 .upload-tbl th{background:var(--pri-bg);color:var(--pri);font-weight:600;padding:8px 10px;text-align:left;position:sticky;top:0;border-bottom:2px solid var(--pri)}
 .upload-tbl td{padding:6px 10px;border-bottom:1px solid var(--brd);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -337,16 +421,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 .cdb-proj-priority.lost{background:#fee2e2;color:var(--dan)}
 .cdb-proj-detail-btn{font-size:11px;color:var(--pri);cursor:pointer;padding:2px 8px;border-radius:6px;background:var(--pri-bg);border:1px solid #dbeafe;white-space:nowrap;transition:all .15s}
 .cdb-proj-detail-btn:hover{background:#dbeafe;border-color:var(--pri)}
-.cdb-contact-section{padding:10px 18px 10px 70px;border-top:1px solid var(--brd);background:var(--bg)}
+.cdb-contact-section{padding:12px 18px;border-top:1px solid var(--brd);background:var(--bg)}
 .cdb-contact-title{font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:600}
 .cdb-contact-list{display:flex;flex-wrap:wrap;gap:8px}
 .cdb-contact-item{font-size:12px;color:var(--text);background:var(--card);padding:4px 10px;border-radius:6px;border:1px solid var(--brd);display:inline-flex;align-items:center;gap:6px}
 .cdb-contact-item .ci-name{font-weight:600}
 .cdb-contact-item .ci-phone{color:var(--text2)}
 .cdb-contact-item .ci-role{color:var(--pri);font-size:11px}
-.cdb-actions{padding:8px 18px 10px 70px;display:flex;gap:8px;border-top:1px solid var(--brd)}
+.cdb-actions{padding:12px 18px;display:flex;gap:8px;border-top:1px solid var(--brd)}
 .cdb-actions .btn{font-size:11px;padding:4px 12px}
-.cdb-timeline-section{padding:8px 18px 8px 70px;border-top:1px solid var(--brd);background:#f8fafc}
+.cdb-timeline-section{padding:10px 18px;border-top:1px solid var(--brd);background:#f8fafc}
 .cdb-timeline-title{font-size:11px;color:var(--text2);margin-bottom:6px;font-weight:600}
 .cdb-timeline-entry{padding:6px 0;border-bottom:1px solid #f1f5f9}
 .cdb-timeline-entry:last-child{border-bottom:none}
@@ -431,8 +515,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 
     <!-- ===== CLIENTS (Customer Database) ===== -->
     <section class="page" id="pg-clients">
-      <div class="sttl">客户资料库 <span class="stc" id="clientCount"></span><button class="btn btn-pri btn-sm" onclick="openUploadModal()" style="margin-left:8px">📤 导入文件</button></div>
-      <div class="search"><span class="si">🔍</span><input id="clientSearch" placeholder="搜索客户名称、类型、合作方向..." oninput="renderClients()"></div>
+      <div class="sttl">客户资料库 <span class="stc" id="clientCount"></span></div>
+      <div class="toolbar">
+        <div class="search"><span class="si">🔍</span><input id="clientSearch" placeholder="搜索客户名称、类型、合作方向..." oninput="renderClients()"></div>
+        <button class="btn btn-pri btn-sm" onclick="openUploadModal()">📤 导入</button>
+      </div>
       <div class="filters" id="clientFilters">
         <button class="f-chip active" onclick="setClientFilter('all')">全部</button>
         <button class="f-chip" onclick="setClientFilter('active')">活跃</button>
@@ -2012,10 +2099,10 @@ function renderDashboard(){
   let totalLogs=S.projects.reduce((s,p)=>s+p.logs.length,0);
 
   document.getElementById('statsGrid').innerHTML = `
-    <div class="stat"><div class="sv">${total}</div><div class="sl">项目总数</div></div>
-    <div class="stat g"><div class="sv">${completing}</div><div class="sl">即将完成</div></div>
-    <div class="stat a"><div class="sv">${active}</div><div class="sl">活跃跟进中</div></div>
-    <div class="stat r"><div class="sv">${lost}</div><div class="sl">已流失</div></div>`;
+    <div class="stat"><div class="stat-ico">📋</div><div class="stat-body"><div class="sv">${total}</div><div class="sl">项目总数</div></div></div>
+    <div class="stat g"><div class="stat-ico">🎯</div><div class="stat-body"><div class="sv">${completing}</div><div class="sl">即将完成</div></div></div>
+    <div class="stat a"><div class="stat-ico">🔥</div><div class="stat-body"><div class="sv">${active}</div><div class="sl">活跃跟进中</div></div></div>
+    <div class="stat r"><div class="stat-ico">📉</div><div class="stat-body"><div class="sv">${lost}</div><div class="sl">已流失</div></div></div>`;
 
   // Pipeline
   let stages={'即将完成':0,'进行中':0,'初期接触':0,'待启动':0,'已流失':0};
@@ -2333,6 +2420,21 @@ function classifyCustomer(name, industry, business, direction){
   return '待分类';
 }
 
+// 项目状态 → 配色（与全局状态色一致），用于客户资料库"一眼看状态"
+function projStatusStyle(st){
+  switch(st){
+    case '即将完成': return {bg:'#ecfdf5', color:'#059669', bar:'#10b981', seg:'#10b981'};
+    case '进行中':   return {bg:'#eff6ff', color:'#2563eb', bar:'#3b82f6', seg:'#3b82f6'};
+    case '初期接触': return {bg:'#fffbeb', color:'#b45309', bar:'#f59e0b', seg:'#f59e0b'};
+    case '待启动':   return {bg:'#f1f5f9', color:'#64748b', bar:'#94a3b8', seg:'#94a3b8'};
+    case '已流失':   return {bg:'#fef2f2', color:'#dc2626', bar:'#ef4444', seg:'#ef4444'};
+    default:        return {bg:'#f1f5f9', color:'#64748b', bar:'#94a3b8', seg:'#94a3b8'};
+  }
+}
+// 客户资料库状态总览的图例顺序与配色
+const CDB_STATUS_ORDER = ['即将完成','进行中','初期接触','待启动','已流失'];
+const CDB_STATUS_COLOR = {'即将完成':'#10b981','进行中':'#3b82f6','初期接触':'#f59e0b','待启动':'#94a3b8','已流失':'#ef4444'};
+
 function renderClients(){
   S.clientSearch = document.getElementById('clientSearch')?.value||'';
   let filtered=S.clients;
@@ -2474,7 +2576,31 @@ function renderClients(){
   if(!allCustomers.length){ list.innerHTML='<div class="empty"><div class="ei">👥</div><div class="et">没有匹配的客户<br><br><button class="btn btn-pri btn-sm" onclick="openClientModal()">+ 添加客户</button></div></div>'; return; }
 
   let globalIdx = 0;
-  let html = `<div class="cdb-summary">共 ${allCustomers.length} 个客户 · 点击展开查看各项目进展和联系人</div>`;
+
+  // ===== 项目状态总览（一眼看全同公司各项目推进） =====
+  let ovProjects = allCustomers.reduce((arr,c)=>arr.concat(c.projects),[]);
+  let ovTotal = ovProjects.length;
+  let ovStages = {'即将完成':0,'进行中':0,'初期接触':0,'待启动':0,'已流失':0};
+  ovProjects.forEach(p=>{ let s=p.status||'待启动'; ovStages[s]=(ovStages[s]||0)+1; });
+  let ovSegs = CDB_STATUS_ORDER.filter(s=>ovStages[s]>0).map(s=>{
+    let pct = ovTotal? Math.round(ovStages[s]/ovTotal*100):0;
+    return `<div class="cdb-ov-seg" style="width:${pct}%;background:${CDB_STATUS_COLOR[s]}" title="${s}: ${ovStages[s]}"></div>`;
+  }).join('');
+  let ovLegend = CDB_STATUS_ORDER.map(s=>{
+    if(!ovStages[s]) return '';
+    return `<span class="cdb-ov-leg"><i style="background:${CDB_STATUS_COLOR[s]}"></i>${s} <b>${ovStages[s]}</b></span>`;
+  }).join('');
+  let ovHtml = `
+    <div class="cdb-overview">
+      <div class="cdb-ov-top">
+        <span class="cdb-ov-title">📊 项目推进总览</span>
+        <span class="cdb-ov-count">👥 <b>${allCustomers.length}</b> 客户 · 📋 <b>${ovTotal}</b> 项目</span>
+      </div>
+      <div class="cdb-ov-bar">${ovSegs||''}</div>
+      <div class="cdb-ov-legend">${ovLegend}</div>
+    </div>`;
+
+  let html = ovHtml;
 
   for(const [groupName, members] of Object.entries(groups)){
     if(members.length===0) continue;
@@ -2504,13 +2630,14 @@ function renderClients(){
       let hasActive = c.projects.some(p=>p.status!=='已流失'&&p.status!=='战败');
       let todayStr = new Date().toISOString().substring(0,10);
 
-      // Project rows
+      // Project rows — 每个项目一张"状态卡"，一眼看推进情况
       let projectRowsHtml = c.projects.map(p=>{
         let latestContent = p.latestNote ? p.latestNote.split('\n')[0] : '暂无进展记录';
         let latestDate = p.latestUpdate || '';
         let latestUpdater = p.logs&&p.logs[0]&&p.logs[0].person ? ' · '+p.logs[0].person : '';
-        let priorityClass = p.priority==='战败' ? 'lost' : 'high';
-        let detailBtn = p.id ? `<span class="cdb-proj-detail-btn" onclick="event.stopPropagation();nav('projects');setTimeout(()=>openProjPanel(${p.id}),100)">📄 查看详情</span>` : '';
+        let ss = projStatusStyle(p.status);
+        let pct = Math.round((p.completion||0)*100);
+        let detailBtn = p.id ? `<span class="cdb-proj-detail" onclick="event.stopPropagation();nav('projects');setTimeout(()=>openProjPanel(${p.id}),100)">📄 详情</span>` : '';
 
         // Build timeline (show last 3 entries)
         let timelineHtml = '';
@@ -2533,20 +2660,24 @@ function renderClients(){
           </div>`;
         }
 
-        return `<div style="border-bottom:1px solid var(--brd)">
-          <div class="cdb-project-row">
-            <div class="cdb-proj-left">
+        return `<div class="cdb-proj">
+          <div class="cdb-proj-top">
+            <div class="cdb-proj-title-wrap">
               <span class="cdb-proj-name" onclick="event.stopPropagation();nav('projects');setTimeout(()=>openProjPanel(${p.id}),100)">${esc(p.name)}</span>
-              ${c.direction ? `<span class="cdb-proj-direction">${esc(c.direction.slice(0,30))}</span>` : ''}
+              ${c.direction ? `<span style="font-size:11px;color:var(--text3)">${esc(c.direction.slice(0,24))}</span>` : ''}
             </div>
-            <div class="cdb-proj-center">
-              <div class="cdb-proj-status">${p.status||'待跟进'} · 完成度 ${Math.round((p.completion||0)*100)}%</div>
-              <div class="cdb-proj-latest">${esc(latestContent)}</div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+              <span class="cdb-proj-pct" style="color:${ss.bar}">${pct}%</span>
+              <span class="cdb-proj-badge" style="background:${ss.bg};color:${ss.color}">${p.status||'待跟进'}</span>
             </div>
-            <div class="cdb-proj-right">
-              ${latestDate ? `<span class="cdb-proj-date">${latestDate}${latestUpdater}</span>` : ''}
-              ${p.priority ? `<span class="cdb-proj-priority ${priorityClass}">${p.priority}</span>` : ''}
-              ${p.logs&&p.logs.length ? `<span style="font-size:10px;color:var(--text3)">${p.logs.length}次更新</span>` : ''}
+          </div>
+          <div class="cdb-proj-bar"><div class="cdb-proj-bar-f" style="width:${pct}%;background:${ss.bar}"></div></div>
+          <div class="cdb-proj-foot">
+            <div class="cdb-proj-latest"><span class="lbl">📝 </span>${esc(latestContent)}</div>
+            <div class="cdb-proj-meta">
+              ${latestDate ? `<span>${latestDate}${latestUpdater}</span>` : ''}
+              ${p.priority ? `<span class="cdb-proj-tag" style="background:${p.priority==='战败'?'#fee2e2':'#ede9fe'};color:${p.priority==='战败'?'#dc2626':'#7c3aed'}">${p.priority}</span>` : ''}
+              ${p.logs&&p.logs.length ? `<span>${p.logs.length}次更新</span>` : ''}
               ${detailBtn}
             </div>
           </div>
@@ -2554,7 +2685,7 @@ function renderClients(){
         </div>`;
       }).join('');
 
-      if(!projectRowsHtml) projectRowsHtml = '<div style="padding:12px 18px 12px 70px;font-size:12px;color:var(--text3)">暂无关联项目</div>';
+      if(!projectRowsHtml) projectRowsHtml = '<div style="padding:16px 18px;text-align:center;font-size:12px;color:var(--text3)">📭 该客户暂无关联项目</div>';
 
       // Contact section
       let contactHtml = '';
@@ -2580,7 +2711,7 @@ function renderClients(){
       if(c.website) extraParts.push(`🌐 <a href="${esc(c.website)}" target="_blank" style="color:var(--pri)">${esc(c.website)}</a>`);
       if(c.business) extraParts.push(`🔧 ${esc(c.business.slice(0,60))}${c.business.length>60?'...':''}`);
       if(extraParts.length){
-        extraInfo = `<div style="padding:8px 18px 8px 70px;border-top:1px solid var(--brd);font-size:11px;color:var(--text2);line-height:1.8">${extraParts.join(' · ')}</div>`;
+        extraInfo = `<div style="padding:10px 18px;border-top:1px solid var(--brd);font-size:11px;color:var(--text2);line-height:1.8">${extraParts.join(' · ')}</div>`;
       }
 
       // Action buttons
@@ -2610,6 +2741,7 @@ function renderClients(){
               ${hasActive?'<span style="color:var(--suc)">● 活跃</span>':''}
               ${c.contacts.length?'<span>👥 '+c.contacts.length+'联系人</span>':''}
             </div>
+            ${(()=>{ if(!c.projects.length) return '<div class="cdb-status-strip"><span class="cdb-status-pill cdb-status-empty">暂无项目</span></div>'; return '<div class="cdb-status-strip">'+c.projects.map(p=>{let s=projStatusStyle(p.status);return `<span class="cdb-status-pill" style="background:${s.bg};color:${s.color}" title="${esc(p.name)}：${p.status||'待跟进'}">${p.status||'待跟进'}</span>`;}).join('')+'</div>'; })()}
           </div>
           <span class="cdb-expand-icon">▶</span>
         </div>
