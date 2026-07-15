@@ -1,7 +1,7 @@
 
 <!DOCTYPE html><html lang="zh-CN"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>CRM 客户资源管理</title>
+<title>增值业务运营系统</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
@@ -486,7 +486,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
   <div class="login-card">
     <div class="login-logo">
       <div class="l-mark">🔐</div>
-      <div class="l-title">CRM 客户资源管理</div>
+      <div class="l-title">增值业务运营系统</div>
       <div class="l-sub">请登录后使用</div>
     </div>
     <div class="login-field">
@@ -505,7 +505,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 
 <!-- Mobile Header -->
 <header class="header">
-  <h1>CRM 客户资源管理</h1>
+  <h1>增值业务运营系统</h1>
   <div class="header-right">
     <button class="h-btn" onclick="openSettings()" title="设置">⚙️</button>
     <button class="h-btn" onclick="openChangesPanel()" title="变更记录">📋</button>
@@ -517,7 +517,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 <div style="display:flex">
   <!-- Sidebar -->
   <nav class="sidebar">
-    <div class="logo">🔷 CRM 系统</div>
+    <div class="logo">🔷 增值业务运营系统</div>
     <div class="si active" onclick="nav('dashboard')"><span style="font-size:18px">📊</span> 工作台</div>
     <div class="si" onclick="nav('projects')"><span style="font-size:18px">📋</span> 项目管理</div>
     <div class="si" onclick="nav('clients')"><span style="font-size:18px">👥</span> 客户资料库</div>
@@ -3339,7 +3339,7 @@ function pushToWechat(title, subtitle, content){
   let payload = {
     token: S.pushKey,
     title: title,
-    content: `<div style="font-size:14px"><h3>${title}</h3><p style="color:#666">${subtitle}</p><p>${content}</p><p style="color:#999;font-size:12px">${new Date().toLocaleString('zh-CN')} · CRM系统</p></div>`,
+    content: `<div style="font-size:14px"><h3>${title}</h3><p style="color:#666">${subtitle}</p><p>${content}</p><p style="color:#999;font-size:12px">${new Date().toLocaleString('zh-CN')} · 增值业务运营系统</p></div>`,
     template: 'html'
   };
   try{
@@ -3364,8 +3364,8 @@ function testPush(){
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
       token: S.pushKey,
-      title: 'CRM系统 · 推送测试',
-      content: '<div style="font-size:14px"><h3>✅ 推送测试成功</h3><p style="color:#666">你的CRM系统已成功连接微信推送</p><p style="color:#999;font-size:12px">' + new Date().toLocaleString('zh-CN') + '</p></div>',
+      title: '增值业务运营系统 · 推送测试',
+      content: '<div style="font-size:14px"><h3>✅ 推送测试成功</h3><p style="color:#666">你的增值业务运营系统已成功连接微信推送</p><p style="color:#999;font-size:12px">' + new Date().toLocaleString('zh-CN') + '</p></div>',
       template: 'html'
     })
   }).then(r=>r.json()).then(data=>{
@@ -3494,7 +3494,7 @@ async function sendDingtalk(title, text){
     msgtype: 'markdown',
     markdown: {
       title: title,
-      text: `## ${title}\n\n${text}\n\n---\n_${new Date().toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})} · CRM系统_`
+      text: `## ${title}\n\n${text}\n\n---\n_${new Date().toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})} · 增值业务运营系统_`
     }
   };
   dingtalkRequest({webhook: S.dingtalkWebhook, secret: S.dingtalkSecret, message: msg})
@@ -3517,8 +3517,8 @@ async function testDingtalk(){
       message: {
         msgtype: 'markdown',
         markdown: {
-          title: 'CRM系统 · 钉钉推送测试',
-          text: '## ✅ 钉钉推送配置成功\n\n你的CRM系统已成功连接钉钉群机器人。\n\n---\n_'+new Date().toLocaleString('zh-CN')+' · CRM系统_'
+          title: '增值业务运营系统 · 钉钉推送测试',
+          text: '## ✅ 钉钉推送配置成功\n\n你的增值业务运营系统已成功连接钉钉群机器人。\n\n---\n_'+new Date().toLocaleString('zh-CN')+' · 增值业务运营系统_'
         }
       }
     });
