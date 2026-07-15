@@ -2194,7 +2194,8 @@ function renderDashboard(){
   let recent=allLogs.slice(0,8);
   document.getElementById('recentFeed').innerHTML = recent.length?recent.map((l,i)=>{
     let c=['f1','f2','f3'][i%3];
-    return `<div class="feed-item" onclick="openProjPanel(${l.projId})"><div class="feed-dot ${c}"></div><div class="feed-body"><div class="feed-title">${esc(l.projName)}</div><div class="feed-desc">${esc(l.note).slice(0,80)}</div><div class="feed-time">${l.date} · ${fmtTime(l.dateSort)}</div></div></div>`;
+    let rel=fmtTime(l.dateSort);
+    return `<div class="feed-item" onclick="openProjPanel(${l.projId})"><div class="feed-dot ${c}"></div><div class="feed-body"><div class="feed-title">${esc(l.projName)}</div><div class="feed-desc">${esc(l.note).slice(0,80)}</div><div class="feed-time">${l.date}${rel?' · '+rel:''}</div></div></div>`;
   }).join(''):'<div class="empty"><div class="ei">📋</div><div class="et">暂无动态</div></div>';
 
   // Status timeline — detailed with last 5 log nodes per project
@@ -3908,9 +3909,15 @@ async function doUploadImport(totalRows){
 // ===== UTILS =====
 function esc(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function fmtTime(iso){
-  if(!iso) return ''; let d=new Date(iso), now=new Date(), diff=(now-d)/1000;
-  if(diff<60) return '刚刚'; if(diff<3600) return Math.floor(diff/60)+'m前';
-  if(diff<86400) return Math.floor(diff/3600)+'h前'; if(diff<604800) return Math.floor(diff/86400)+'天前';
+  if(!iso) return '';
+  // 纯日期（如 2026-07-15）：日期已在别处单独显示，不再算相对时间
+  if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) return '';
+  // 缺时区信息的 datetime（如 Supabase 返回的 naive timestamp）按 UTC 解析，
+  // 否则 GMT+8 下会偏差 8 小时，导致刚更新的信息显示成「几小时前」
+  let s = /[zZ]|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + 'Z';
+  let d=new Date(s), now=new Date(), diff=(now-d)/1000;
+  if(diff<60) return '刚刚'; if(diff<3600) return Math.floor(diff/60)+'分钟前';
+  if(diff<86400) return Math.floor(diff/3600)+'小时前'; if(diff<604800) return Math.floor(diff/86400)+'天前';
   return d.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'});
 }
 function showToast(msg){ let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200); }
