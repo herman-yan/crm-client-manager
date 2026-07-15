@@ -462,6 +462,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 .login-user{text-align:center;font-size:13px;color:var(--text2);margin-bottom:14px}
 .login-user b{color:var(--pri);font-weight:700}
 
+/* ===== PROJECT NATURE (新/老项目) ===== */
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg-btn{flex:1;min-width:130px;padding:9px 12px;border:1px solid var(--brd);background:var(--card);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--text2);text-align:center}
+.seg-btn:hover{border-color:var(--pri)}
+.seg-btn.active{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 2px 6px rgba(37,99,235,.25)}
+.seg-btn.active[data-v="老项目"]{background:#d97706;border-color:#d97706;box-shadow:0 2px 6px rgba(217,119,6,.25)}
+.proj-nature-hint{font-size:12px;line-height:1.5;padding:8px 12px;border-radius:8px;margin-top:8px;display:none}
+.proj-nature-hint.show{display:block}
+.proj-nature-hint.is-old{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+.proj-nature-hint.is-new{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8}
+.proj-nature-hint b{font-weight:700}
+.cdb-nature-tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.cdb-nature-tag.new{background:#dbeafe;color:#1d4ed8}
+.cdb-nature-tag.old{background:#fef3c7;color:#92400e}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head><body>
@@ -630,7 +645,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
       <div class="fg"><label>优先级</label><select id="fProjPri"><option value="高">高</option><option value="中">中</option><option value="低">低</option><option value="战败">战败</option></select></div>
       <div class="fg"><label>完成度</label><input type="number" id="fProjComp" min="0" max="1" step="0.05" value="0" placeholder="0.0-1.0"></div>
     </div>
-    <div class="fg"><label>关联客户</label><input id="fProjClient" placeholder="客户/合作单位"></div>
+    <div class="fg"><label>关联客户</label><input id="fProjClient" placeholder="客户/合作单位" oninput="onProjClientInput()"></div>
+    <div class="fg">
+      <label>项目性质 <span style="font-weight:400;color:var(--text3);font-size:11px">（区分新合作 / 老客户复购）</span></label>
+      <div class="seg" id="projNatureSeg">
+        <button type="button" class="seg-btn active" data-v="新项目" onclick="setProjNature('新项目')">🆕 新项目（首次合作）</button>
+        <button type="button" class="seg-btn" data-v="老项目" onclick="setProjNature('老项目')">🔁 老项目（复购/二次提报）</button>
+      </div>
+      <div class="proj-nature-hint" id="projNatureHint"></div>
+    </div>
     <div class="fg"><label>行业领域</label><input id="fProjIndustry" placeholder="如：新能源、机器人"></div>
     <div class="fg"><label>预计金额(万元)</label><input type="number" id="fProjAmt" min="0" placeholder="预计金额"></div>
     <div class="fg"><label>项目负责人</label><input id="fProjPerson" placeholder="如：陈熙源"></div>
@@ -2132,6 +2155,7 @@ function mergeExtFields(){
       if(!p.customer) p.customer=ext.customer||'';
       if(!p.industry) p.industry=ext.industry||'';
       if(p.amount===undefined||p.amount===null) p.amount=ext.amount||0;
+      if(!p.nature) p.nature=ext.nature||'';
     }
   });
 }
@@ -2723,6 +2747,8 @@ function renderClients(){
             <div class="cdb-proj-latest"><span class="lbl">📝 </span>${esc(latestContent)}</div>
             <div class="cdb-proj-meta">
               ${latestDate ? `<span>${latestDate}${latestUpdater}</span>` : ''}
+              ${p.nature==='老项目' ? `<span class="cdb-nature-tag old">🔁 老项目</span>` : ''}
+              ${p.nature==='新项目' ? `<span class="cdb-nature-tag new">🆕 新项目</span>` : ''}
               ${p.priority ? `<span class="cdb-proj-tag" style="background:${p.priority==='战败'?'#fee2e2':'#ede9fe'};color:${p.priority==='战败'?'#dc2626':'#7c3aed'}">${p.priority}</span>` : ''}
               ${p.logs&&p.logs.length ? `<span>${p.logs.length}次更新</span>` : ''}
               ${detailBtn}
@@ -2937,7 +2963,31 @@ function openProjModal(id){
     document.getElementById('fProjAmt').value='';
     document.getElementById('fProjPerson').value='';
   }
+  // 初始化项目性质
+  setProjNature(id ? (S.projects.find(x=>x.id===id)||{}).nature==='老项目' ? '老项目' : '新项目' : '新项目');
+  onProjClientInput();
   document.getElementById('mProj').classList.add('active');
+}
+
+function setProjNature(v){
+  document.querySelectorAll('#projNatureSeg .seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.v===v));
+}
+
+function onProjClientInput(){
+  let cust = document.getElementById('fProjClient').value.trim();
+  let hint = document.getElementById('projNatureHint');
+  if(!cust){ hint.className='proj-nature-hint'; hint.innerHTML=''; return; }
+  let id = Number(document.getElementById('fProjId').value)||0;
+  let cnt = S.projects.filter(p=>p.customer===cust && p.id!==id).length;
+  if(cnt>0){
+    hint.className='proj-nature-hint show is-old';
+    hint.innerHTML='🔁 已识别老客户【'+esc(cust)+'】，已有 <b>'+cnt+'</b> 个在跟项目 → 本次为老客户复购 / 二次提报';
+    setProjNature('老项目');
+  }else{
+    hint.className='proj-nature-hint show is-new';
+    hint.innerHTML='✨ 未匹配到已有项目，本次为新客户首次合作项目';
+    setProjNature('新项目');
+  }
 }
 
 async function saveProject(){
@@ -2949,6 +2999,8 @@ async function saveProject(){
   let industry=document.getElementById('fProjIndustry').value.trim();
   let amount=parseFloat(document.getElementById('fProjAmt').value)||0;
   let person=document.getElementById('fProjPerson').value.trim();
+  let natureBtn=document.querySelector('#projNatureSeg .seg-btn.active');
+  let nature=natureBtn?natureBtn.dataset.v:'新项目';
 
   let status; if(priority==='战败') status='已流失'; else if(comp>=.9) status='即将完成'; else if(comp>=.5) status='进行中'; else if(comp>0) status='初期接触'; else status='待启动';
 
@@ -2962,7 +3014,7 @@ async function saveProject(){
   // Basic fields that definitely exist in DB
   let basicFields={name,priority,completion_num:comp,completion:String(comp),status};
   // Extended fields that may not exist in DB yet
-  let extFields={person,customer,industry,amount};
+  let extFields={person,customer,industry,amount,nature};
 
   // Save extended fields to localStorage as fallback
   let localProj=JSON.parse(localStorage.getItem('crm_proj_ext')||'{}');
@@ -3009,7 +3061,7 @@ async function saveProject(){
     // Merge extended fields from localStorage into loaded projects
     mergeExtFields();
     // 在 refreshAll 之后写变更记录，避免被覆盖
-    await addChangeDb(id?'update':'create', (id?'更新项目':'新增项目')+' - '+name, id?('状态:'+status+', 完成度:'+Math.round(comp*100)+'%'):('优先级:'+priority));
+    await addChangeDb(id?'update':'create', (id?'更新项目':'新增项目')+' - '+name, id?('状态:'+status+', 完成度:'+Math.round(comp*100)+'%'):('性质:'+nature+', 优先级:'+priority));
     closeModal('mProj'); renderProjCards(); showToast(id?'已更新 ✓':'已创建 ✓');
 
     // DingTalk notification for status change
@@ -3025,6 +3077,7 @@ async function saveProject(){
       // New project created
       sendDingtalk('🆕 新项目创建',
         `**${name}**\n\n`+
+        `性质：${nature==='老项目'?'🔁 老客户复购/二次提报':'🆕 新客户首次合作'}\n`+
         `状态：${status}\n`+
         `优先级：${priority}\n`+
         (customer ? `客户：${customer}\n` : '')+
